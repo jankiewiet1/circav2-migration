@@ -1,0 +1,4 @@
+
+energy_type,amount,unit,emissions_co2e,date,supplier,location,scope_description,reporting_boundary,reporting_period,activity_data,emission_factor,emission_unit,uncertainty_notes,trend_notes,progress_toward_target,additional_notes
+Electricity,5000,kWh,2.1,2024-01-01,Power Co Ltd,Main Office,Indirect emissions from purchased electricity,All facilities,2024 Q1,Monthly utility bills,0.42,kg CO2e per kWh,Medium uncertainty,Stable trend,Meeting targets,Solar panels installed
+Natural Gas,3000,GJ,1.8,2024-01-15,Gas Supplier Inc,Warehouse,Indirect emissions from heating,Warehouse only,2024 Q1,Monthly bills,0.6,kg CO2e per kWh,Low uncertainty,Decreasing,On target,New heating system

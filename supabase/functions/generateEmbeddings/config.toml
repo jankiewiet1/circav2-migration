@@ -1,0 +1,2 @@
+[functions.generateEmbeddings]
+verify_jwt = false 

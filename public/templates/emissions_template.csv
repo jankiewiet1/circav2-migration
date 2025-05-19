@@ -1,0 +1,6 @@
+
+date,category,description,quantity,unit,scope,notes
+2024-04-01,diesel,Fuel for company trucks,1234.56,liters,1,April invoice from fuel supplier
+2024-04-01,electricity,Office electricity use,9800.25,kWh,2,Smart meter reading for April
+2024-04-01,flights,Business travel to Berlin,650.00,km,3,Flight booking confirmation
+
