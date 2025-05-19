@@ -1,7 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
-import { addDynamicTranslations } from '@/services/translationService';
 
 // Import translation JSON files
 import enTranslation from './locales/en/translation.json';
@@ -10,18 +9,9 @@ import deTranslation from './locales/de/translation.json';
 
 // the translations
 const resources = {
-  en: {
-    translation: enTranslation,
-    dynamic: {} // Will be populated with Supabase translations
-  },
-  nl: {
-    translation: nlTranslation,
-    dynamic: {}
-  },
-  de: {
-    translation: deTranslation,
-    dynamic: {}
-  }
+  en: { translation: enTranslation },
+  nl: { translation: nlTranslation },
+  de: { translation: deTranslation }
 };
 
 i18n
@@ -41,14 +31,8 @@ i18n
       order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
     },
-    ns: ['translation', 'dynamic'],
+    ns: ['translation'],
     defaultNS: 'translation'
   });
-
-// Load dynamic translations from Supabase
-// This is done after initialization to prevent blocking the app startup
-addDynamicTranslations(i18n, ['marketing', 'email']).catch(error => {
-  console.error('Failed to load dynamic translations:', error);
-});
 
 export default i18n; 

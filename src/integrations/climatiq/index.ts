@@ -17,7 +17,7 @@ export * from './energy';
 
 // API Configuration
 const CLIMATIQ_API_URL = 'https://beta3.api.climatiq.io';
-const CLIMATIQ_API_KEY = process.env.NEXT_PUBLIC_CLIMATIQ_API_KEY || '';
+const CLIMATIQ_API_KEY = process.env.VITE_PUBLIC_CLIMATIQ_API_KEY || '';
 
 // Error Handling
 export class ClimatiqError extends Error {
