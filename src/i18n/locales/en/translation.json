@@ -109,7 +109,7 @@
     "auditReadyDetail": "Complete data trails and documentation"
   },
   "calculator": {
-    "title": "Calculate Your CO₂ Footprint",
+    "title": "Calculate your CO₂ Footprint",
     "subtitle": "Fill in your consumption and receive a summary by email. Try it now!",
     "electricity": "Electricity",
     "heating": "Heating",
@@ -145,8 +145,8 @@
     "effort": "Effort",
     "savings": "Savings",
     "grayElectricity": "Gray Electricity (Average)",
-    "greenElectricity": "Green Electricity",
-    "dutchWindSolar": "Green Electricity (Wind and Solar)",
+    "greenElectricity": "Green Electricity (Imported)",
+    "dutchWindSolar": "Green Electricity (Wind and Solar, Inland)",
     "biomassElectricity": "Electricity from Biomass",
     "districtHeating": "District Heating (CCGT)",
     "naturalGas": "Natural Gas",
@@ -165,7 +165,8 @@
     "metroTram": "Metro/Tram (Green Electricity)",
     "hydrogenGray": "Gray Hydrogen",
     "shortHaulFlight": "Flight <2,500 km",
-    "longHaulFlight": "Flight 2,500+ km"
+    "longHaulFlight": "Flight 2,500+ km",
+    "emissionFactorSource": "All emission factors are from the Dutch National Factor 2024 (RVO) and DEFRA."
   },
   "impact": {
     "high": "High",

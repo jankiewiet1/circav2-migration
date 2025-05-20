@@ -9,6 +9,7 @@ import emissionFactors from '@/data/emissionFactors.json';
 import { Chart, ArcElement, Tooltip as ChartTooltip, Legend } from 'chart.js';
 import ReductionTips from './ReductionTips';
 import { sendCO2SummaryEmail } from '@/services/emailService';
+import { Info } from 'lucide-react';
 Chart.register(ArcElement, ChartTooltip, Legend);
 
 const SOCIAL_COST_PER_KG = 0.7;
@@ -202,10 +203,10 @@ export default function CO2Calculator() {
                     <span className="text-sm">{t('calculator.factor')}: <b>{opt.factor}</b> kg CO₂e/{opt.unit}</span>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <span className="text-xs text-blue-500 cursor-help">ⓘ</span>
+                        <span className="text-xs text-blue-500 cursor-help flex items-center"><Info className="w-4 h-4" /></span>
                       </TooltipTrigger>
                       <TooltipContent>
-                        Source: {opt.source}
+                        {t('calculator.emissionFactorSource')}
                       </TooltipContent>
                     </Tooltip>
                     <span className="text-sm">{t('calculator.co2emissions')}: <b>{((parseFloat(inputs[opt.label]?.amount) || 0) * (opt.factor || 0)).toFixed(2)}</b> kg</span>
@@ -296,112 +297,108 @@ export default function CO2Calculator() {
         {!anyValueEntered ? (
           <div className="text-gray-500 text-center my-8">{t('calculator.pleaseEnterValue')}</div>
         ) : (
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-              <div className="w-full max-w-[400px] mx-auto">
+          <div className="flex flex-col md:flex-row gap-8 items-start w-full">
+            {/* Pie Chart Section */}
+            <div className="flex-1 flex justify-center items-center w-full md:max-w-[420px] mx-auto md:mx-0">
+              <div className="w-full max-w-[380px]">
                 <Pie data={pieData} />
               </div>
-              <div className="space-y-4">
+            </div>
+            {/* Summary Cards Section */}
+            <div className="flex-1 flex flex-col gap-4 w-full">
+              <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+                <h3 className="font-semibold text-lg mb-3">{t('calculator.emissionsOverview')}</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span>{t('calculator.totalEmissions')}:</span>
+                    <span className="font-medium">{totalCO2.toFixed(2)} kg CO₂e</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>{t('calculator.totalSocialCost')}:</span>
+                    <span className="font-medium">€ {totalCost.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>{t('calculator.emissionsPerFTE')}:</span>
+                    <span className="font-medium">{(totalCO2 / (fte || 1)).toFixed(2)} kg CO₂e</span>
+                  </div>
+                </div>
+              </div>
+              {companyName && (
                 <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-                  <h3 className="font-semibold text-lg mb-3">{t('calculator.emissionsOverview')}</h3>
+                  <h3 className="font-semibold text-lg mb-3">{t('calculator.companyInfo')}</h3>
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span>{t('calculator.totalEmissions')}:</span>
-                      <span className="font-medium">{totalCO2.toFixed(2)} kg CO₂e</span>
+                      <span>{t('calculator.companyName')}:</span>
+                      <span className="font-medium">{companyName}</span>
                     </div>
+                    {companyAddress && (
+                      <div className="flex justify-between items-center">
+                        <span>{t('calculator.companyAddress')}:</span>
+                        <span className="font-medium">{companyAddress}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between items-center">
-                      <span>{t('calculator.totalSocialCost')}:</span>
-                      <span className="font-medium">€ {totalCost.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>{t('calculator.emissionsPerFTE')}:</span>
-                      <span className="font-medium">{(totalCO2 / (fte || 1)).toFixed(2)} kg CO₂e</span>
+                      <span>{t('calculator.employees')}:</span>
+                      <span className="font-medium">{fte} FTE</span>
                     </div>
                   </div>
                 </div>
-                
-                {companyName && (
-                  <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-                    <h3 className="font-semibold text-lg mb-3">{t('calculator.companyInfo')}</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span>{t('calculator.companyName')}:</span>
-                        <span className="font-medium">{companyName}</span>
+              )}
+              <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+                <h3 className="font-semibold text-lg mb-3">{t('calculator.reductionTarget.title')}</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span>{t('calculator.reductionTarget.percentage')}:</span>
+                    <span className="font-medium">{reductionTarget}% by {reductionYear}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>{t('calculator.reductionTarget.current')}:</span>
+                    <span className="font-medium">{totalCO2.toFixed(2)} kg CO₂e</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>{t('calculator.reductionTarget.target')}:</span>
+                    <span className="font-medium">{targetEmissions.toFixed(2)} kg CO₂e</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>{t('calculator.reductionTarget.required')}:</span>
+                    <span className="font-medium">{(totalCO2 - targetEmissions).toFixed(2)} kg CO₂e</span>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+                <h3 className="font-semibold text-lg mb-3">{t('calculator.recommendations')}</h3>
+                <p className="text-sm text-gray-600 mb-4">{t('calculator.recommendationSubtitle')}</p>
+                <ReductionTips categoryResults={categoryResults} />
+                {!submitted && (
+                  <div className="mt-6">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <div>
+                        <label className="block font-medium mb-1">{t('calculator.emailReport')}</label>
+                        <Input 
+                          type="email" 
+                          value={email} 
+                          onChange={e => setEmail(e.target.value)} 
+                          placeholder="your.email@example.com" 
+                          className="w-full"
+                          required
+                        />
                       </div>
-                      {companyAddress && (
-                        <div className="flex justify-between items-center">
-                          <span>{t('calculator.companyAddress')}:</span>
-                          <span className="font-medium">{companyAddress}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between items-center">
-                        <span>{t('calculator.employees')}:</span>
-                        <span className="font-medium">{fte} FTE</span>
-                      </div>
+                      <Button 
+                        type="submit" 
+                        className="w-full bg-circa-green hover:bg-circa-green-dark"
+                      >
+                        {t('calculator.sendReport')}
+                      </Button>
+                    </form>
+                  </div>
+                )}
+                {submitted && (
+                  <div className="mt-6">
+                    <div className="bg-green-50 text-green-800 p-4 rounded">
+                      <p className="font-medium">{t('calculator.thankYou')}</p>
                     </div>
                   </div>
                 )}
-                
-                <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-                  <h3 className="font-semibold text-lg mb-3">{t('calculator.reductionTarget.title')}</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span>{t('calculator.reductionTarget.percentage')}:</span>
-                      <span className="font-medium">{reductionTarget}% by {reductionYear}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>{t('calculator.reductionTarget.current')}:</span>
-                      <span className="font-medium">{totalCO2.toFixed(2)} kg CO₂e</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>{t('calculator.reductionTarget.target')}:</span>
-                      <span className="font-medium">{targetEmissions.toFixed(2)} kg CO₂e</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>{t('calculator.reductionTarget.required')}:</span>
-                      <span className="font-medium">{(totalCO2 - targetEmissions).toFixed(2)} kg CO₂e</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-                  <h3 className="font-semibold text-lg mb-3">{t('calculator.recommendations')}</h3>
-                  <p className="text-sm text-gray-600 mb-4">{t('calculator.recommendationSubtitle')}</p>
-                  
-                  <ReductionTips categoryResults={categoryResults} />
-                  
-                  {!submitted && (
-                    <div className="mt-6">
-                      <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                          <label className="block font-medium mb-1">{t('calculator.emailReport')}</label>
-                          <Input 
-                            type="email" 
-                            value={email} 
-                            onChange={e => setEmail(e.target.value)} 
-                            placeholder="your.email@example.com" 
-                            className="w-full"
-                            required
-                          />
-                        </div>
-                        <Button 
-                          type="submit" 
-                          className="w-full bg-circa-green hover:bg-circa-green-dark"
-                        >
-                          {t('calculator.sendReport')}
-                        </Button>
-                      </form>
-                    </div>
-                  )}
-                  
-                  {submitted && (
-                    <div className="mt-6">
-                      <div className="bg-green-50 text-green-800 p-4 rounded">
-                        <p className="font-medium">{t('calculator.thankYou')}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           </div>
@@ -445,7 +442,6 @@ export default function CO2Calculator() {
         {/* Navigation Buttons */}
         <div className="flex justify-between mt-8">
           <Button
-            variant="outline"
             onClick={goBack}
             disabled={step === 0}
           >

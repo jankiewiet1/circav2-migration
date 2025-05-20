@@ -29,18 +29,18 @@ const Index = () => {
           
           <div className="hidden md:flex items-center space-x-8 text-base">
             <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 font-medium">{t('nav.howItWorks')}</a>
+            <a href="#co2-calculator" className="text-gray-600 hover:text-gray-900 font-medium">CO₂ Calculator</a>
+            <a href="#showcase" className="text-gray-600 hover:text-gray-900 font-medium">Circa in Action</a>
             <a href="#why-circa" className="text-gray-600 hover:text-gray-900 font-medium">{t('nav.whyCirca')}</a>
             <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">{t('nav.features')}</a>
-            <a href="#testimonials" className="text-gray-600 hover:text-gray-900 font-medium">{t('nav.testimonials')}</a>
-            <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium">{t('nav.pricing')}</a>
           </div>
           
           <div className="flex items-center space-x-4 pr-2 md:pr-6">
             <LanguageSelector />
-            <Button variant="outline" size="lg" asChild>
+            <Button className="border border-gray-300 text-gray-700 bg-white hover:bg-gray-100" asChild>
               <Link to="/auth/login">{t('common.login')}</Link>
             </Button>
-            <Button className="bg-circa-green hover:bg-circa-green-dark" size="lg" asChild>
+            <Button className="bg-circa-green hover:bg-circa-green-dark text-white h-11 px-8 text-lg" asChild>
               <Link to="/auth/register">{t('common.signup')}</Link>
             </Button>
           </div>
@@ -65,13 +65,16 @@ const Index = () => {
               {t('hero.subtitle')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 mb-4">
-              <Button size="lg" className="bg-[#004D2F] hover:bg-[#003D2F] text-white text-lg px-6" asChild>
+              <Button className="bg-[#004D2F] hover:bg-[#003D2F] text-white h-11 px-8 text-lg" asChild>
                 <Link to="/auth/register">
                   {t('hero.cta')}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" className="border-[#004D2F] text-[#004D2F] hover:bg-[#004D2F]/10 text-lg">
+              <Button className="border-[#004D2F] text-[#004D2F] hover:bg-[#004D2F]/10 h-11 px-8 text-lg" onClick={() => {
+                const el = document.getElementById('showcase');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}>
                 {t('hero.ctaSecondary')}
               </Button>
             </div>
@@ -111,7 +114,7 @@ const Index = () => {
           </div>
           <HowItWorksFlow />
           <div className="mt-14 text-center">
-            <Button className="bg-circa-green hover:bg-circa-green-dark" size="lg" asChild>
+            <Button className="bg-circa-green hover:bg-circa-green-dark text-white h-11 px-8 text-lg" asChild>
               <Link to="/auth/register">
                 {t('howItWorks.cta')}
               </Link>
@@ -121,7 +124,7 @@ const Index = () => {
       </section>
 
       {/* CO2 Calculator Demo Section */}
-      <section className="py-14 bg-white border-y border-gray-100">
+      <section id="co2-calculator" className="py-14 bg-white border-y border-gray-100">
         <div className="max-w-[1400px] w-full mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold mb-6 text-circa-green-dark text-center">{t('calculator.title')}</h2>
           <p className="text-center text-gray-600 mb-8">{t('calculator.subtitle')}</p>
@@ -137,7 +140,7 @@ const Index = () => {
       </section>
       
       {/* Product Showcase */}
-      <section className="py-20 md:py-28 px-4 bg-gray-50">
+      <section id="showcase" className="py-20 md:py-28 px-4 bg-gray-50">
         <div className="max-w-[1400px] w-full mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-circa-green-dark">
@@ -151,7 +154,7 @@ const Index = () => {
           <ProductShowcase />
           
           <div className="mt-14 text-center">
-            <Button className="bg-circa-green hover:bg-circa-green-dark" size="lg" asChild>
+            <Button className="bg-circa-green hover:bg-circa-green-dark text-white h-11 px-8 text-lg" asChild>
               <Link to="/auth/register">
                 {t('showcase.cta')}
               </Link>
@@ -265,7 +268,7 @@ const Index = () => {
           </div>
           
           <div className="mt-14 text-center">
-            <Button className="bg-circa-green hover:bg-circa-green-dark" size="lg" asChild>
+            <Button className="bg-circa-green hover:bg-circa-green-dark text-white h-11 px-8 text-lg" asChild>
               <Link to="/auth/register">
                 {t('features.cta')}
               </Link>
@@ -283,7 +286,7 @@ const Index = () => {
           <p className="text-xl mb-8 opacity-90">
             {t('cta.subtitle')}
           </p>
-          <Button size="lg" variant="outline" className="bg-white text-circa-green-dark hover:bg-white/90 border-white text-lg px-8 py-6" asChild>
+          <Button className="bg-white text-circa-green-dark hover:bg-white/90 border-white h-11 px-8 text-lg" asChild>
               <Link to="/auth/register">
               {t('common.signup')}
               <ArrowRight className="ml-2 h-5 w-5" />

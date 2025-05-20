@@ -109,7 +109,7 @@
     "auditReadyDetail": "Volledige gegevensregistratie en documentatie"
   },
   "calculator": {
-    "title": "CO₂-calculator",
+    "title": "Bereken je CO₂-voetafdruk",
     "subtitle": "Bereken uw koolstofvoetafdruk",
     "electricity": "Elektriciteit",
     "heating": "Verwarming",
@@ -165,7 +165,8 @@
     "metroTram": "Metro/Tram (groene stroom)",
     "hydrogenGray": "Waterstof grijs",
     "shortHaulFlight": "Vliegreis -2.500 km",
-    "longHaulFlight": "Vliegreis 2.500+ km"
+    "longHaulFlight": "Vliegreis 2.500+ km",
+    "emissionFactorSource": "Alle emissiefactoren zijn afkomstig van de Nederlandse Nationale Milieudatabase 2024 (RVO) en DEFRA."
   },
   "impact": {
     "high": "Hoog",

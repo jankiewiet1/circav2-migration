@@ -109,7 +109,7 @@
     "auditReadyDetail": "Vollständige Datenpfade und Dokumentation"
   },
   "calculator": {
-    "title": "CO₂-Rechner",
+    "title": "Berechnen Sie Ihren CO₂-Fußabdruck",
     "subtitle": "Schätzen Sie Ihren CO₂-Fußabdruck",
     "electricity": "Elektrizität",
     "heating": "Heizung",
@@ -145,8 +145,8 @@
     "effort": "Aufwand",
     "savings": "Einsparungen",
     "grayElectricity": "Graustrom (Durchschnitt)",
-    "greenElectricity": "Grünstrom",
-    "dutchWindSolar": "Grünstrom (Wind und Solar)",
+    "greenElectricity": "Grünstrom (Importiert)",
+    "dutchWindSolar": "Grünstrom (Wind und Solar, Inland)",
     "biomassElectricity": "Strom aus Biomasse",
     "districtHeating": "Fernwärme (GuD)",
     "naturalGas": "Erdgas",
@@ -165,7 +165,8 @@
     "metroTram": "U-Bahn/Straßenbahn (Grünstrom)",
     "hydrogenGray": "Grauer Wasserstoff",
     "shortHaulFlight": "Flug <2.500 km",
-    "longHaulFlight": "Flug 2.500+ km"
+    "longHaulFlight": "Flug 2.500+ km",
+    "emissionFactorSource": "Alle Emissionsfaktoren stammen aus dem Dutch National Factor 2024 (RVO) und DEFRA."
   },
   "impact": {
     "high": "Hoch",
