@@ -71,7 +71,7 @@ const Index = () => {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button className="border-[#004D2F] text-[#004D2F] hover:bg-[#004D2F]/10 h-11 px-8 text-lg" onClick={() => {
+              <Button className="bg-[#004D2F] text-white hover:bg-[#003D2F] h-11 px-8 text-lg" onClick={() => {
                 const el = document.getElementById('showcase');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
               }}>
