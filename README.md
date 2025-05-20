@@ -1,3 +1,7 @@
+# circav2-migration
+
+Updated for Vercel deployment on May 20, 2024.
+
 # Welcome to your Lovable project
 
 ## Project info
