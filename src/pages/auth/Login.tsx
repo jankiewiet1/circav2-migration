@@ -1,54 +1,81 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { Helmet } from "react-helmet-async";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Helmet } from 'react-helmet-async';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth } from '@/contexts/AuthContext';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Logo } from "@/components/branding/Logo";
+
+// Form schema
+const formSchema = z.object({
+  email: z.string().email({
+    message: "Please enter a valid email address",
+  }),
+  password: z.string().min(1, {
+    message: "Password is required",
+  }),
+  rememberMe: z.boolean().default(false),
+});
 
 export default function Login() {
   const { t } = useTranslation();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, session, loading: authLoading } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(true);
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  const from = (location.state as any)?.from?.pathname || "/dashboard";
 
-  // Watch for session changes
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+      rememberMe: false,
+    },
+  });
+
   useEffect(() => {
-    if (session && !authLoading) {
-      console.log("Session detected, navigating to:", from);
-      navigate(from, { replace: true });
+    // Check for success message in location state (e.g., from signup)
+    if (location.state?.message) {
+      toast({
+        title: t('common.success'),
+        description: location.state.message,
+      });
+      // Clear the state to prevent showing the message again on refresh
+      window.history.replaceState({}, document.title);
     }
-  }, [session, authLoading, navigate, from]);
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  }, [location.state, toast, t]);
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
     setError(null);
     
     try {
-      const { error } = await signIn(email, password, rememberMe);
+      const { error: loginError } = await login(values.email, values.password);
       
-      if (error) {
-        console.error("Login error:", error);
-        setError(error.message || "An error occurred during login");
+      if (loginError) {
+        throw new Error(loginError.message);
       }
+      
+      // Redirect to dashboard
+      navigate('/dashboard');
+    } catch (err: any) {
+      setError(err.message || 'Failed to sign in. Please check your credentials and try again.');
     } finally {
       setLoading(false);
     }
-  };
-  
+  }
+
   return (
     <>
       <Helmet>
@@ -60,7 +87,7 @@ export default function Login() {
         <header className="border-b py-4">
           <div className="container flex items-center justify-between">
             <Link to="/">
-              <img src="/logo.svg" alt="Circa" className="h-8" />
+              <Logo className="h-8" />
             </Link>
             <Button variant="ghost" asChild>
               <Link to="/auth/signup">{t('common.signup')}</Link>
@@ -68,91 +95,95 @@ export default function Login() {
           </div>
         </header>
 
-        <main className="flex-1 container py-12">
-          <div className="max-w-md mx-auto">
-            <div className="mb-12 text-center">
-              <h1 className="text-3xl font-bold tracking-tight mb-3">
-                {t('login.title')}
-              </h1>
-              <p className="text-lg text-gray-600">
-                {t('login.subtitle')}
+        <main className="flex-1 flex items-center justify-center p-6">
+          <div className="max-w-md w-full">
+            <div className="text-center mb-8">
+              <h1 className="text-2xl font-bold tracking-tight">{t('login.welcomeBack')}</h1>
+              <p className="text-gray-600 mt-2">{t('login.signInToContinue')}</p>
+            </div>
+
+            {error && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('common.email')}</FormLabel>
+                      <FormControl>
+                        <Input placeholder="your.email@company.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>{t('common.password')}</FormLabel>
+                        <Link 
+                          to="/auth/forgot-password" 
+                          className="text-sm text-circa-green hover:underline"
+                        >
+                          {t('login.forgotPassword')}
+                        </Link>
+                      </div>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="rememberMe"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <Checkbox 
+                          checked={field.value} 
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel className="text-sm font-normal cursor-pointer">
+                        {t('login.rememberMe')}
+                      </FormLabel>
+                    </FormItem>
+                  )}
+                />
+
+                <Button 
+                  type="submit" 
+                  className="w-full bg-circa-green hover:bg-circa-green-dark"
+                  disabled={loading}
+                >
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {t('common.signIn')}
+                </Button>
+              </form>
+            </Form>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                {t('login.noAccount')} {' '}
+                <Link to="/auth/signup" className="text-circa-green hover:underline">
+                  {t('common.signup')}
+                </Link>
               </p>
             </div>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('login.welcomeBack')}</CardTitle>
-                <CardDescription>{t('login.enterCredentials')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {error && (
-                  <Alert variant="destructive" className="mb-6">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-                
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">{t('common.email')}</Label>
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      placeholder="you@example.com" 
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password">{t('common.password')}</Label>
-                      <Link to="/auth/reset-password" className="text-xs text-primary hover:underline">
-                        {t('login.forgotPassword')}
-                      </Link>
-                    </div>
-                    <Input 
-                      id="password" 
-                      type="password"
-                      placeholder="••••••••" 
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="remember-me" 
-                      checked={rememberMe}
-                      onCheckedChange={(checked) => setRememberMe(checked === true)}
-                    />
-                    <Label 
-                      htmlFor="remember-me" 
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      {t('login.rememberMe')}
-                    </Label>
-                  </div>
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={loading || authLoading}
-                  >
-                    {(loading || authLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {t('login.signIn')}
-                  </Button>
-                </form>
-              </CardContent>
-              <CardFooter className="flex justify-center border-t pt-6">
-                <Button variant="ghost" asChild>
-                  <Link to="/auth/signup">
-                    {t('login.noAccount')} {t('common.signup')}
-                  </Link>
-                </Button>
-              </CardFooter>
-            </Card>
           </div>
         </main>
 

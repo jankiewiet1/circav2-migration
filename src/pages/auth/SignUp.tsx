@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
-
+import { Logo } from "@/components/branding/Logo";
 import SignUpForm from '@/components/auth/SignUpForm';
 import { Button } from '@/components/ui/button';
 
@@ -20,7 +20,7 @@ export default function SignUp() {
         <header className="border-b py-4">
           <div className="container flex items-center justify-between">
             <Link to="/">
-              <img src="/logo.svg" alt="Circa" className="h-8" />
+              <Logo className="h-8" />
             </Link>
             <Button variant="ghost" asChild>
               <Link to="/auth/login">{t('common.login')}</Link>

@@ -2,7 +2,6 @@ import { Route } from "react-router-dom";
 import Index from "@/pages/Index";
 import Login from "@/pages/auth/Login";
 import Register from "@/pages/auth/Register";
-import SignUp from "@/pages/auth/SignUp";
 import Help from "@/pages/Help";
 import Callback from "@/pages/auth/Callback";
 import Success from "@/app/auth/success/page";
@@ -34,7 +33,7 @@ export const publicRoutes = (
     <Route path="/" element={<><RouteEffects /><Index /></>} />
     <Route path="/auth/login" element={<Login />} />
     <Route path="/auth/register" element={<Register />} />
-    <Route path="/auth/signup" element={<SignUp />} />
+    <Route path="/auth/signup" element={<Register />} />
     <Route path="/auth/callback" element={<Callback />} />
     <Route path="/auth/success" element={<Success />} />
     <Route path="/help" element={<Help />} />
