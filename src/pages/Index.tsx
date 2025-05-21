@@ -182,8 +182,6 @@ const Index = () => {
       {/* CO2 Calculator Demo Section */}
       <section id="co2-calculator" className="py-14 bg-gray-50 border-y border-gray-100">
         <div className="max-w-[1400px] w-full mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold mb-6 text-circa-green-dark text-center">{t('calculator.title')}</h2>
-          <p className="text-center text-gray-600 mb-8">{t('calculator.subtitle')}</p>
           <CO2Calculator />
         </div>
       </section>
