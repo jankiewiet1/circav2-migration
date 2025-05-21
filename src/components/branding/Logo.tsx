@@ -15,7 +15,7 @@ export const Logo = ({ variant = "dark", withText = true, className = "", isLink
   
   const logoContent = (
     <div className={`flex items-center ${className}`}>
-      <div className="relative w-auto h-10 mr-2">
+      <div className="relative w-auto h-14 mr-3">
         <img 
           src={logoSrc}
           alt="Circa Logo" 
@@ -23,7 +23,7 @@ export const Logo = ({ variant = "dark", withText = true, className = "", isLink
         />
       </div>
       {withText && (
-        <span className={`text-xl font-bold ${textColor}`}>Circa</span>
+        <span className={`text-2xl font-bold ${textColor}`}>Circa</span>
       )}
     </div>
   );
