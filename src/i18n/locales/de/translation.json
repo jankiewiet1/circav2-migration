@@ -210,6 +210,59 @@
     "recommendationSubtitle": "Basierend auf Ihren Daten finden Sie hier einige Vorschläge zur Reduzierung Ihres CO₂-Fußabdrucks:",
     "emissionFactorSource": "Quelle: Klimadatenbanken, verifiziert 2024"
   },
+  "impact": {
+    "high": "Hohe Wirkung",
+    "medium": "Mittlere Wirkung",
+    "low": "Geringe Wirkung"
+  },
+  "effort": {
+    "high": "Hoher Aufwand",
+    "medium": "Mittlerer Aufwand",
+    "low": "Geringer Aufwand"
+  },
+  "savings": "Einsparung: {{value}}",
+  "tips": {
+    "electricity": {
+      "switchto100renewableenergy": "Wechsel zu 100% erneuerbarer Energie",
+      "switchto100renewableenergy.description": "Wechseln Sie zu einem Anbieter, der zertifizierten Grünstrom aus niederländischer Wind- oder Sonnenenergie anbietet.",
+      "installlighting": "LED-Beleuchtung installieren",
+      "installlighting.description": "Ersetzen Sie alle herkömmlichen Leuchtmittel durch LED-Alternativen in Ihrem Büro.",
+      "smartbuildingcontrols": "Intelligente Gebäudesteuerung",
+      "smartbuildingcontrols.description": "Installieren Sie Bewegungssensoren und intelligente Thermostate, um Energieverschwendung zu reduzieren.",
+      "solarpanelinstallation": "Solaranlagen-Installation",
+      "solarpanelinstallation.description": "Installieren Sie Solarpanels auf Ihrem Bürodach, um Ihre eigene erneuerbare Elektrizität zu erzeugen."
+    },
+    "heating": {
+      "buildinginsulation": "Gebäudeisolierung",
+      "buildinginsulation.description": "Verbessern Sie die Wand-, Dach- und Fensterisolierung, um Wärmeverluste zu reduzieren.",
+      "heatpumpinstallation": "Wärmepumpeninstallation",
+      "heatpumpinstallation.description": "Ersetzen Sie fossile Heizsysteme durch elektrische Wärmepumpen.",
+      "switchtobiogas": "Umstellung auf Biogas",
+      "switchtobiogas.description": "Wenn Wärmepumpen nicht realisierbar sind, erwägen Sie den Umstieg auf zertifiziertes Biogas.",
+      "lowerthermostat": "Thermostat niedriger einstellen",
+      "lowerthermostat.description": "Reduzieren Sie die Bürotemperatur um 1-2°C während der Arbeitszeiten."
+    },
+    "businessTransport": {
+      "electricvehiclefleet": "Elektrofahrzeugflotte",
+      "electricvehiclefleet.description": "Ersetzen Sie Firmenwagen durch Elektrofahrzeuge, die mit erneuerbarer Energie aufgeladen werden.",
+      "remoteworkpolicy": "Richtlinie für Fernarbeit",
+      "remoteworkpolicy.description": "Implementieren Sie eine strukturierte Richtlinie für Fernarbeit, um Pendelfahrten zu reduzieren.",
+      "companybikingprogram": "Firmeneigenes Fahrradprogramm",
+      "companybikingprogram.description": "Stellen Sie Firmenfahrräder oder E-Bikes für lokale Fahrten und Pendelverkehr bereit.",
+      "greencommutingincentives": "Anreize für umweltfreundliches Pendeln",
+      "greencommutingincentives.description": "Bieten Sie finanzielle Anreize für Mitarbeiter, die öffentliche Verkehrsmittel nutzen."
+    },
+    "flights": {
+      "virtualmeetingpolicy": "Richtlinie für virtuelle Meetings",
+      "virtualmeetingpolicy.description": "Implementieren Sie eine Richtlinie, die virtuelle Alternativen vor der Genehmigung von Flügen verlangt.",
+      "traintravelforshortdistances": "Bahnreisen für kurze Strecken",
+      "traintravelforshortdistances.description": "Schreiben Sie Bahnreisen für Strecken unter 700 km vor, wenn möglich.",
+      "combinetrips": "Reisen kombinieren",
+      "combinetrips.description": "Planen Sie mehrere Meetings in der gleichen Region für eine einzelne Reise.",
+      "highqualitycarbonoffsetting": "Hochwertige CO₂-Kompensation",
+      "highqualitycarbonoffsetting.description": "Investieren Sie in Gold Standard-CO₂-Kompensationen für unvermeidbare Flüge."
+    }
+  },
   "alt": {
     "userPhoto": "Benutzer",
     "dashboardImage": "Circa Dashboard"

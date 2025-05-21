@@ -50,18 +50,13 @@ export default function ReductionTips({ categoryResults }: ReductionTipsProps) {
 
   // Get the translation key for a tip title
   const getTipTranslationKey = (category: string, title: string) => {
-    // Derive a key based on category and a sanitized version of the title
     const categoryKey = category === 'Elektriciteit' ? 'electricity' :
                         category === 'Verwarming' ? 'heating' :
                         category === 'Zakelijk vervoer' ? 'businessTransport' :
                         category === 'Vliegreizen' ? 'flights' : '';
-    
-    // Simply return a descriptive key that can be added to translation files
-    // Format: tips.{category}.{sanitizedTitle}
     const sanitizedTitle = title.toLowerCase()
-      .replace(/[^\w\s]/g, '')  // Remove special chars
-      .replace(/\s+/g, '');     // Remove spaces
-    
+      .replace(/[^\w\s]/g, '')
+      .replace(/\s+/g, '');
     return `tips.${categoryKey}.${sanitizedTitle}`;
   };
 
@@ -70,6 +65,41 @@ export default function ReductionTips({ categoryResults }: ReductionTipsProps) {
     return `${getTipTranslationKey(category, title)}.description`;
   };
 
+  const renderTipCard = (tip: any, categoryName: string, key: string | number) => (
+    <Card key={key} className="overflow-hidden border border-gray-200 hover:shadow-md transition-shadow h-full flex flex-col">
+      <CardHeader className="pb-2">
+        <div className="flex items-start justify-between">
+          <CardTitle className="text-base font-bold">
+            {t(getTipTranslationKey(categoryName, tip.title), { defaultValue: tip.title })}
+          </CardTitle>
+          {tip.impact === 'high' && (
+            <Zap className="h-5 w-5 text-green-600 mr-1 flex-shrink-0" />
+          )}
+        </div>
+        <CardDescription className="text-gray-600 text-sm mt-1 line-clamp-4">
+          {t(getTipDescriptionKey(categoryName, tip.title), { defaultValue: tip.description })}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="mt-auto pt-0">
+        <div className="flex flex-wrap gap-1 mt-1">
+          <Badge variant="outline" className={`${impactColors[tip.impact]} border text-xs py-0.5`}>
+            <Zap className="mr-1 h-3 w-3" />
+            {t(`impact.${tip.impact}`)}
+          </Badge>
+          <Badge variant="outline" className={`${difficultyColors[tip.difficulty]} border text-xs py-0.5`}>
+            <AlertCircle className="mr-1 h-3 w-3" />
+            {t(`effort.${tip.difficulty}`)}
+          </Badge>
+          <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200 text-xs py-0.5">
+            <ArrowRightCircle className="mr-1 h-3 w-3" />
+            {t('savings', { value: tip.savingPotential })}
+          </Badge>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  // Default view with Tabs (this is now the only view)
   return (
     <div className="w-full">
       <div className="mb-4">
@@ -80,17 +110,17 @@ export default function ReductionTips({ categoryResults }: ReductionTipsProps) {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full mb-4 flex overflow-x-auto">
+        <TabsList className="w-full mb-4 flex overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
           {sortedCategories.map(cat => {
             const categoryKey = getCategoryTranslationKey(cat.category);
             return (
               <TabsTrigger 
                 key={cat.category} 
                 value={cat.category}
-                className="flex-1 min-w-fit"
+                className="flex-1 min-w-fit px-3 py-2"
               >
-                <span className="mr-2">{categoryKey ? t(categoryKey) : cat.category}</span>
-                <Badge variant="outline" className="bg-circa-green-light text-circa-green">
+                <span className="mr-2 text-sm">{categoryKey ? t(categoryKey) : cat.category}</span>
+                <Badge variant="outline" className="bg-circa-green-light text-circa-green text-xs">
                   {cat.total.toFixed(1)} kg
                 </Badge>
               </TabsTrigger>
@@ -100,47 +130,8 @@ export default function ReductionTips({ categoryResults }: ReductionTipsProps) {
 
         {sortedCategories.map(cat => (
           <TabsContent key={cat.category} value={cat.category} className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {getRelevantTips(cat.category).map((tip, idx) => {
-                const tipTitleKey = getTipTranslationKey(cat.category, tip.title);
-                const tipDescKey = getTipDescriptionKey(cat.category, tip.title);
-                
-                return (
-                  <Card key={idx} className="overflow-hidden border border-gray-200 hover:shadow-md transition-shadow h-full">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <CardTitle className="text-lg font-bold">
-                          {t(tipTitleKey, { defaultValue: tip.title })}
-                        </CardTitle>
-                        <div className="flex items-center">
-                          {tip.impact === 'high' && (
-                            <Zap className="h-5 w-5 text-green-600 mr-1" />
-                          )}
-                        </div>
-                      </div>
-                      <CardDescription className="text-gray-600">
-                        {t(tipDescKey, { defaultValue: tip.description })}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex gap-2 flex-wrap mt-1">
-                        <Badge variant="outline" className={`${impactColors[tip.impact]} border`}>
-                          <Zap className="mr-1 h-3 w-3" />
-                          {t(`impact.${tip.impact}`, { defaultValue: tip.impact.charAt(0).toUpperCase() + tip.impact.slice(1) })} {t('calculator.impact')}
-                        </Badge>
-                        <Badge variant="outline" className={`${difficultyColors[tip.difficulty]} border`}>
-                          <AlertCircle className="mr-1 h-3 w-3" />
-                          {t(`difficulty.${tip.difficulty}`, { defaultValue: tip.difficulty.charAt(0).toUpperCase() + tip.difficulty.slice(1) })} {t('calculator.effort')}
-                        </Badge>
-                        <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200">
-                          <ArrowRightCircle className="mr-1 h-3 w-3" />
-                          {t('calculator.savings')}: {tip.savingPotential}
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-4 auto-rows-fr">
+              {getRelevantTips(cat.category).map((tip, idx) => renderTipCard(tip, cat.category, idx))}
             </div>
           </TabsContent>
         ))}

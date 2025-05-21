@@ -210,6 +210,59 @@
     "recommendationSubtitle": "Based on your data, here are some suggestions to reduce your carbon footprint:",
     "emissionFactorSource": "Source: Climate databases, verified 2024"
   },
+  "impact": {
+    "high": "High Impact",
+    "medium": "Medium Impact",
+    "low": "Low Impact"
+  },
+  "effort": {
+    "high": "High Effort",
+    "medium": "Medium Effort",
+    "low": "Low Effort"
+  },
+  "savings": "Savings: {{value}}",
+  "tips": {
+    "electricity": {
+      "switchto100renewableenergy": "Switch to 100% Renewable Energy",
+      "switchto100renewableenergy.description": "Change to a provider offering certified green electricity from Dutch wind or solar sources.",
+      "installlighting": "Install LED Lighting",
+      "installlighting.description": "Replace all conventional lighting with LED alternatives throughout your office.",
+      "smartbuildingcontrols": "Smart Building Controls",
+      "smartbuildingcontrols.description": "Install motion sensors and smart thermostats to reduce energy waste.",
+      "solarpanelinstallation": "Solar Panel Installation",
+      "solarpanelinstallation.description": "Install solar panels on your office roof to generate your own renewable electricity."
+    },
+    "heating": {
+      "buildinginsulation": "Building Insulation",
+      "buildinginsulation.description": "Improve wall, roof, and window insulation to reduce heat loss.",
+      "heatpumpinstallation": "Heat Pump Installation",
+      "heatpumpinstallation.description": "Replace fossil fuel heating systems with electric heat pumps.",
+      "switchtobiogas": "Switch to Biogas",
+      "switchtobiogas.description": "If heat pumps aren't viable, consider switching to certified biogas.",
+      "lowerthermostat": "Lower Thermostat Setting",
+      "lowerthermostat.description": "Reduce office temperature by 1-2°C during working hours."
+    },
+    "businessTransport": {
+      "electricvehiclefleet": "Electric Vehicle Fleet",
+      "electricvehiclefleet.description": "Replace company cars with electric vehicles charged with renewable energy.",
+      "remoteworkpolicy": "Remote Work Policy",
+      "remoteworkpolicy.description": "Implement a structured remote work policy to reduce commuting.",
+      "companybikingprogram": "Company Biking Program",
+      "companybikingprogram.description": "Provide company bikes or e-bikes for local trips and commuting.",
+      "greencommutingincentives": "Green Commuting Incentives",
+      "greencommutingincentives.description": "Offer financial incentives for employees using public transport."
+    },
+    "flights": {
+      "virtualmeetingpolicy": "Virtual Meeting Policy",
+      "virtualmeetingpolicy.description": "Implement a policy requiring virtual alternatives before approving flights.",
+      "traintravelforshortdistances": "Train Travel for Short Distances",
+      "traintravelforshortdistances.description": "Mandate train travel for trips under 700km when possible.",
+      "combinetrips": "Combine Trips",
+      "combinetrips.description": "Plan multiple meetings in the same region for a single trip.",
+      "highqualitycarbonoffsetting": "High Quality Carbon Offsetting",
+      "highqualitycarbonoffsetting.description": "Invest in Gold Standard carbon offsets for unavoidable flights."
+    }
+  },
   "alt": {
     "userPhoto": "User",
     "dashboardImage": "Circa Dashboard"

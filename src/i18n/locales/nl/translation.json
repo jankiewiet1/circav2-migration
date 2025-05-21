@@ -210,6 +210,59 @@
     "recommendationSubtitle": "Op basis van uw gegevens zijn hier enkele suggesties om uw CO₂-voetafdruk te verminderen:",
     "emissionFactorSource": "Bron: Klimaatdatabases, geverifieerd 2024"
   },
+  "impact": {
+    "high": "Hoge Impact",
+    "medium": "Gemiddelde Impact",
+    "low": "Lage Impact"
+  },
+  "effort": {
+    "high": "Hoge Inspanning",
+    "medium": "Gemiddelde Inspanning",
+    "low": "Lage Inspanning"
+  },
+  "savings": "Besparing: {{value}}",
+  "tips": {
+    "electricity": {
+      "switchto100renewableenergy": "Overstappen op 100% Hernieuwbare Energie",
+      "switchto100renewableenergy.description": "Ga naar een leverancier die gecertificeerde groene stroom aanbiedt van Nederlandse wind of zonnebronnen.",
+      "installlighting": "LED-verlichting installeren",
+      "installlighting.description": "Vervang alle conventionele verlichting door LED-alternatieven in uw kantoor.",
+      "smartbuildingcontrols": "Slimme Gebouwbesturing",
+      "smartbuildingcontrols.description": "Installeer bewegingssensoren en slimme thermostaten om energieverspilling te verminderen.",
+      "solarpanelinstallation": "Zonnepanelen Installatie",
+      "solarpanelinstallation.description": "Installeer zonnepanelen op uw kantoordak om uw eigen hernieuwbare elektriciteit op te wekken."
+    },
+    "heating": {
+      "buildinginsulation": "Gebouwisolatie",
+      "buildinginsulation.description": "Verbeter de isolatie van muren, daken en ramen om warmteverlies te verminderen.",
+      "heatpumpinstallation": "Warmtepomp installatie",
+      "heatpumpinstallation.description": "Vervang verwarmingssystemen op fossiele brandstoffen door elektrische warmtepompen.",
+      "switchtobiogas": "Overschakelen op Biogas",
+      "switchtobiogas.description": "Als warmtepompen niet haalbaar zijn, overweeg dan over te schakelen op gecertificeerd biogas.",
+      "lowerthermostat": "Thermostaat lager zetten",
+      "lowerthermostat.description": "Verlaag de kantoortemperatuur met 1-2°C tijdens werkuren."
+    },
+    "businessTransport": {
+      "electricvehiclefleet": "Elektrische voertuigvloot",
+      "electricvehiclefleet.description": "Vervang bedrijfswagens door elektrische voertuigen die worden opgeladen met hernieuwbare energie.",
+      "remoteworkpolicy": "Thuiswerkbeleid",
+      "remoteworkpolicy.description": "Implementeer een gestructureerd thuiswerkbeleid om woon-werkverkeer te verminderen.",
+      "companybikingprogram": "Bedrijfsfietsenprogramma",
+      "companybikingprogram.description": "Bied bedrijfsfietsen of e-bikes aan voor lokale ritten en woon-werkverkeer.",
+      "greencommutingincentives": "Groene reiskostenvergoeding",
+      "greencommutingincentives.description": "Bied financiële stimulansen voor werknemers die het openbaar vervoer gebruiken."
+    },
+    "flights": {
+      "virtualmeetingpolicy": "Beleid voor virtuele vergaderingen",
+      "virtualmeetingpolicy.description": "Implementeer een beleid dat virtuele alternatieven vereist voordat vluchten worden goedgekeurd.",
+      "traintravelforshortdistances": "Treinreizen voor korte afstanden",
+      "traintravelforshortdistances.description": "Verplicht treinreizen voor trips onder 700 km wanneer mogelijk.",
+      "combinetrips": "Combineer reizen",
+      "combinetrips.description": "Plan meerdere afspraken in dezelfde regio voor één enkele reis.",
+      "highqualitycarbonoffsetting": "Hoogwaardige CO₂-compensatie",
+      "highqualitycarbonoffsetting.description": "Investeer in Gold Standard CO₂-compensaties voor onvermijdbare vluchten."
+    }
+  },
   "alt": {
     "userPhoto": "Gebruiker",
     "dashboardImage": "Circa Dashboard"
