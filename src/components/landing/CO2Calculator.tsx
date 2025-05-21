@@ -99,6 +99,11 @@ export default function CO2Calculator() {
         name: companyName || undefined, // Use company name as "name" if provided
         company: companyName,
         phone: '',
+        companyAddress: companyAddress,
+        companyFTE: fte,
+        reductionTarget: reductionTarget,
+        reductionYear: reductionYear,
+        targetEmissions: targetEmissions,
         summary: {
           totalCO2,
           totalCost,
