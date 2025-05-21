@@ -126,64 +126,21 @@ export default function CO2Calculator() {
         <div>
           <h2 className="text-2xl font-bold mb-4">{t(categoryKey)}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {cat.options.map(opt => {
-              // Derive translation key from the option label based on category
+            {cat.options.map((opt, index) => {
+              // Map index directly to translation key based on category
               let translationKey = '';
               if (step === 0) { // Electricity
-                if (opt.label.includes('Grijze stroom')) {
-                  translationKey = 'calculator.grayElectricity';
-                } else if (opt.label.includes('Groene stroom uit buitenland')) {
-                  translationKey = 'calculator.greenElectricity';
-                } else if (opt.label.includes('Nederlandse wind en zon')) {
-                  translationKey = 'calculator.dutchWindSolar';
-                } else if (opt.label.includes('biomassa')) {
-                  translationKey = 'calculator.biomassElectricity';
-                }
+                const electricityKeys = ['calculator.grayElectricity', 'calculator.greenElectricity', 'calculator.dutchWindSolar', 'calculator.biomassElectricity'];
+                translationKey = electricityKeys[index] || '';
               } else if (step === 1) { // Heating
-                if (opt.label.includes('Stadsverwarming')) {
-                  translationKey = 'calculator.districtHeating';
-                } else if (opt.label.includes('Aardgas')) {
-                  translationKey = 'calculator.naturalGas';
-                } else if (opt.label.includes('Stookolie')) {
-                  translationKey = 'calculator.heatingOil';
-                } else if (opt.label.includes('Geothermie')) {
-                  translationKey = 'calculator.geothermal';
-                } else if (opt.label.includes('Propaan')) {
-                  translationKey = 'calculator.propane';
-                } else if (opt.label.includes('Groengas')) {
-                  translationKey = 'calculator.biogas';
-                }
+                const heatingKeys = ['calculator.districtHeating', 'calculator.naturalGas', 'calculator.heatingOil', 'calculator.geothermal', 'calculator.propane', 'calculator.biogas'];
+                translationKey = heatingKeys[index] || '';
               } else if (step === 2) { // Business Transport
-                if (opt.label === 'Diesel') {
-                  translationKey = 'calculator.diesel';
-                } else if (opt.label === 'Benzine') {
-                  translationKey = 'calculator.petrol';
-                } else if (opt.label === 'LPG') {
-                  translationKey = 'calculator.lpg';
-                } else if (opt.label.includes('CNG')) {
-                  translationKey = 'calculator.cng';
-                } else if (opt.label.includes('Elektrisch (met groene stroom)')) {
-                  translationKey = 'calculator.electricGreen';
-                } else if (opt.label.includes('Elektrisch (met grijze stroom)')) {
-                  translationKey = 'calculator.electricGray';
-                } else if (opt.label.includes('Trein')) {
-                  translationKey = 'calculator.train';
-                } else if (opt.label === 'Bus') {
-                  translationKey = 'calculator.bus';
-                } else if (opt.label.includes('Metro/Tram')) {
-                  translationKey = 'calculator.metroTram';
-                } else if (opt.label.includes('Waterstof grijs')) {
-                  translationKey = 'calculator.hydrogenGray';
-                }
+                const transportKeys = ['calculator.diesel', 'calculator.petrol', 'calculator.lpg', 'calculator.cng', 'calculator.electricGreen', 'calculator.electricGray', 'calculator.train', 'calculator.bus', 'calculator.metroTram', 'calculator.hydrogenGray'];
+                translationKey = transportKeys[index] || '';
               } else if (step === 3) { // Flights
-                if (opt.label.includes('-2.500 km')) {
-                  translationKey = 'calculator.shortHaulFlight';
-                } else if (opt.label.includes('2.500+ km')) {
-                  translationKey = 'calculator.longHaulFlight';
-                }
-              } else {
-                // For other categories, we'll use the original label for now
-                translationKey = '';
+                const flightKeys = ['calculator.shortHaulFlight', 'calculator.longHaulFlight'];
+                translationKey = flightKeys[index] || '';
               }
               
               const displayLabel = translationKey ? t(translationKey) : opt.label;

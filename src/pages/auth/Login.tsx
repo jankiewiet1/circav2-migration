@@ -28,7 +28,7 @@ const formSchema = z.object({
 
 export default function Login() {
   const { t } = useTranslation();
-  const { login } = useAuth();
+  const { signIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -61,7 +61,7 @@ export default function Login() {
     setError(null);
     
     try {
-      const { error: loginError } = await login(values.email, values.password);
+      const { error: loginError } = await signIn(values.email, values.password, values.rememberMe);
       
       if (loginError) {
         throw new Error(loginError.message);

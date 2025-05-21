@@ -1,125 +1,97 @@
-import { useEffect, useRef, useState } from 'react';
-import { Upload, Sparkles, BarChart3, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Upload, Sparkles, BarChart3, FileText } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export function HowItWorksFlow() {
   const { t } = useTranslation();
   const [activeStep, setActiveStep] = useState(0);
-  const stepsRef = useRef<(HTMLDivElement | null)[]>([]);
 
+  // Set up scroll tracking for the flow visualization
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const index = stepsRef.current.findIndex(ref => ref === entry.target);
-            if (index !== -1) {
-              setActiveStep(index);
-            }
-          }
-        });
-      },
-      {
-        threshold: 0.6,
-        rootMargin: '-20% 0px -20% 0px'
-      }
-    );
+    const handleScroll = () => {
+      const steps = document.querySelectorAll('.step-section');
+      
+      steps.forEach((step, index) => {
+        const rect = step.getBoundingClientRect();
+        // When the step is in the middle of the viewport, set it as active
+        if (rect.top <= window.innerHeight / 2 && rect.bottom >= window.innerHeight / 2) {
+          setActiveStep(index);
+        }
+      });
+    };
 
-    stepsRef.current.forEach(ref => {
-      if (ref) observer.observe(ref);
-    });
-
-    return () => observer.disconnect();
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const steps = [
     {
-      title: t('howItWorks.uploadData'),
-      description: t('howItWorks.uploadDataSubtitle'),
-      icon: Upload,
-      color: "bg-blue-500"
+      title: t('howItWorks.steps.upload.title'),
+      description: t('howItWorks.steps.upload.description'),
+      icon: Upload
     },
     {
-      title: t('howItWorks.autoMatch'),
-      description: t('howItWorks.autoMatchSubtitle'),
-      icon: Sparkles,
-      color: "bg-purple-500"
+      title: t('howItWorks.steps.match.title'),
+      description: t('howItWorks.steps.match.description'),
+      icon: Sparkles
     },
     {
-      title: t('howItWorks.insights'),
-      description: t('howItWorks.insightsSubtitle'),
-      icon: BarChart3,
-      color: "bg-green-500"
+      title: t('howItWorks.steps.insights.title'),
+      description: t('howItWorks.steps.insights.description'),
+      icon: BarChart3
     },
     {
-      title: t('howItWorks.reports'),
-      description: t('howItWorks.reportsSubtitle'),
-      icon: FileText,
-      color: "bg-orange-500"
+      title: t('howItWorks.steps.reports.title'),
+      description: t('howItWorks.steps.reports.description'),
+      icon: FileText
     }
   ];
 
   return (
-    <div className="relative w-full">
-      {/* Progress Line */}
-      <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-gray-200 transform -translate-x-1/2 hidden md:block">
+    <div className="relative w-full max-w-5xl mx-auto">
+      {/* Dynamic center guide line with animated gradient */}
+      <div className="absolute left-1/2 top-0 bottom-0 w-2.5 bg-gray-100 -translate-x-1/2 z-0 md:block hidden">
+        {/* Progress overlay that grows based on scroll position */}
         <div 
-          className="absolute top-0 w-full bg-circa-green transition-all duration-500 ease-out"
-          style={{ height: `${((activeStep + 1) * 100) / steps.length}%` }}
+          className="absolute top-0 w-full bg-gradient-to-b from-blue-300 via-green-300 to-orange-300 transition-all duration-300"
+          style={{ 
+            height: `${Math.min(100, (activeStep / (steps.length - 1)) * 100)}%`,
+          }}
         />
       </div>
-
-      {/* Steps */}
-      <div className="space-y-24 md:space-y-40 lg:space-y-48 xl:space-y-56 relative">
+      
+      <div className="flex flex-col gap-36">
         {steps.map((step, index) => {
           const Icon = step.icon;
-          const isActive = index <= activeStep;
+          const isEven = index % 2 === 0;
           
           return (
-            <div
-              key={index}
-              ref={(el) => { stepsRef.current[index] = el; }}
-              className={`flex flex-col md:flex-row items-center gap-8 md:gap-20 lg:gap-32 xl:gap-40 transition-all duration-500 ${
-                isActive ? 'opacity-100' : 'opacity-50'
-              }`}
-            >
-              {/* Left Content - Shown on even indexes */}
-              {index % 2 === 0 && (
-                <div className="flex-1 text-right hidden md:block">
-                  <h3 className={`text-2xl font-semibold mb-2 ${isActive ? 'text-circa-green' : ''}`}>
+            <div key={index} className="relative step-section" id={`step-${index}`}>
+              {/* Highlight indicator on the guide line */}
+              <div className={`absolute left-1/2 -translate-x-1/2 top-1/2 -mt-6 h-4 w-4 rounded-full bg-white z-10 md:block hidden transition-all duration-300 ${activeStep >= index ? 'border-4 border-circa-green shadow-glow' : 'border-2 border-gray-300'}`} />
+              
+              <div className={`flex flex-col md:flex-row items-center ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'} gap-16 md:gap-48`}>
+                {/* Text content */}
+                <div className={`md:w-2/5 flex flex-col ${isEven ? 'md:items-end md:text-right' : 'md:items-start md:text-left'} items-center text-center`}>
+                  <h3 className="text-2xl font-bold mb-3 text-gray-900">
                     {step.title}
                   </h3>
-                  <p className="text-gray-600">{step.description}</p>
+                  <p className="text-gray-600 max-w-md text-lg">
+                    {step.description}
+                  </p>
                 </div>
-              )}
-
-              {/* Icon */}
-              <div className={`relative flex items-center justify-center ${isActive ? 'scale-110' : ''} transition-transform duration-500`}>
-                <div className={`w-16 h-16 rounded-full ${isActive ? 'bg-circa-green' : 'bg-gray-200'} flex items-center justify-center transition-colors duration-500`}>
-                  <Icon className={`w-8 h-8 ${isActive ? 'text-white' : 'text-gray-500'}`} />
+                
+                {/* Icon with background */}
+                <div className={`flex items-center justify-center md:w-2/5 ${isEven ? 'md:justify-start' : 'md:justify-end'}`}>
+                  <div 
+                    className={`relative transform transition-all duration-500 hover:scale-105 ${activeStep >= index ? 'scale-100 opacity-100' : 'scale-95 opacity-80'}`}
+                  >
+                    <div className="absolute -inset-8 rounded-full bg-green-50/70"></div>
+                    <div className="h-24 w-24 md:h-32 md:w-32 rounded-full bg-white border border-green-100 flex items-center justify-center shadow-xl relative">
+                      <Icon className="h-12 w-12 md:h-16 md:w-16 text-circa-green" />
+                    </div>
+                  </div>
                 </div>
-                {/* Step number */}
-                <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full ${isActive ? 'bg-circa-green-dark' : 'bg-gray-400'} text-white text-sm flex items-center justify-center`}>
-                  {index + 1}
-                </div>
-              </div>
-
-              {/* Right Content - Shown on odd indexes */}
-              {index % 2 !== 0 && (
-                <div className="flex-1 hidden md:block">
-                  <h3 className={`text-2xl font-semibold mb-2 ${isActive ? 'text-circa-green' : ''}`}>
-                    {step.title}
-                  </h3>
-                  <p className="text-gray-600">{step.description}</p>
-                </div>
-              )}
-
-              {/* Mobile Content */}
-              <div className="text-center md:hidden">
-                <h3 className={`text-2xl font-semibold mb-2 ${isActive ? 'text-circa-green' : ''}`}>
-                  {step.title}
-                </h3>
-                <p className="text-gray-600">{step.description}</p>
               </div>
             </div>
           );
