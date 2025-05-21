@@ -10,12 +10,12 @@ interface LogoProps {
 export const Logo = ({ variant = "dark", withText = true, className = "", isLink = true }: LogoProps) => {
   const textColor = variant === "light" ? "text-white" : "text-gray-900";
   
-  // Use a relative path for the logo that works in development and production
-  const logoSrc = "/assets/logo.svg";
+  // Use the original logo file
+  const logoSrc = "/lovable-uploads/7416a2f2-be9a-4bce-9909-6e9663491308.png";
   
   const logoContent = (
     <div className={`flex items-center ${className}`}>
-      <div className="relative w-auto h-8 mr-2">
+      <div className="relative w-auto h-10 mr-2">
         <img 
           src={logoSrc}
           alt="Circa Logo" 

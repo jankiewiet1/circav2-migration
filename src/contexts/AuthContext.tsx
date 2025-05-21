@@ -207,9 +207,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         duration: 10000,
       });
 
-      // Redirect to success page with user info
-      window.location.href = `/auth/success?email=${encodeURIComponent(email)}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}`;
-      
+      // Return successful signup - the Register component will handle redirection
       return { error: null, user: authData.user };
     } catch (error: any) {
       console.error("Unexpected error during registration:", error);

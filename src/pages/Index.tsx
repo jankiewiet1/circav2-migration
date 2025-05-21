@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link } from "react-router-dom";
+import React, { useEffect } from 'react';
+import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Check, Upload, BarChart3, FileText, Target } from "lucide-react";
@@ -14,9 +14,26 @@ import { ValueProposition } from "@/components/landing/ValueProposition";
 import { SignupProgress } from "@/components/landing/SignupProgress";
 import CO2Calculator from '@/components/landing/CO2Calculator';
 import { LanguageSelector } from '@/components/ui/language-selector';
+import { useToast } from "@/components/ui/use-toast";
 
 const Index = () => {
   const { t } = useTranslation();
+  const location = useLocation();
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    // Check if user was redirected from registration
+    if (location.state?.registered) {
+      toast({
+        title: "Registration Successful!",
+        description: "Thank you for joining Circa! Please check your email to verify your account.",
+        duration: 6000,
+      });
+      
+      // Clear state
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, toast]);
   
   return (
     <div className="min-h-screen flex flex-col">

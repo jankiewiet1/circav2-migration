@@ -17,6 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
 
 // Progress indicator component
 const ProgressSteps = ({ currentStep, totalSteps }) => {
@@ -268,12 +269,21 @@ export default function Register() {
         throw signUpError;
       }
       
-      // Success! Redirect to login with success message
-      navigate("/auth/login", { 
-        state: { 
-          message: "Thank you for registering! Your account has been added to our waitlist. We'll review your application and get back to you soon." 
-        } 
+      // Success! Redirect to homepage with success message
+      toast({
+        title: "Registration Successful!",
+        description: "Thank you for registering with Circa. You'll be redirected to the homepage in a moment.",
+        duration: 5000,
       });
+      
+      // Short delay before redirecting to homepage
+      setTimeout(() => {
+        navigate("/", { 
+          state: { 
+            registered: true
+          } 
+        });
+      }, 3000);
       
     } catch (err: any) {
       console.error("Registration error:", err);
