@@ -11,6 +11,7 @@ import { companySetupRoutes } from "@/routes/companySetupRoutes";
 import { emissionRoutes } from "@/routes/emissionRoutes";
 import { mainRoutes } from "@/routes/mainRoutes";
 import './i18n/i18n'; // Import initialized i18n
+import { Analytics } from '@vercel/analytics/react';
 
 import NotFound from "@/pages/NotFound";
 import Index from "@/pages/Index";
@@ -39,6 +40,7 @@ function App() {
               {emissionRoutes}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <Analytics />
           </CompanyProvider>
         </AuthProvider>
       </TooltipProvider>

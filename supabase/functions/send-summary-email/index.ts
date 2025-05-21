@@ -158,12 +158,12 @@ const handler = async (req: Request) => {
   try {
     console.log("Received request");
     
-    // Handle CORS preflight requests
-    if (req.method === 'OPTIONS') {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
       console.log("Handling OPTIONS request");
-      return new Response('ok', { headers: corsHeaders });
-    }
-
+    return new Response('ok', { headers: corsHeaders });
+  }
+  
     // Clone the request to read it multiple times if needed
     const clonedReq = req.clone();
     
@@ -297,7 +297,7 @@ const handler = async (req: Request) => {
           <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:32px auto;background:#fff;border-radius:8px;box-shadow:0 2px 8px #0001;overflow:hidden;">
             <tr>
               <td style="background:${brandColor};padding:24px 0;text-align:center;">
-                <img src="${logoUrl}" alt="Circa Logo" style="height:48px;margin-bottom:8px;" />
+                <img src="${logoUrl}" alt="Circa Logo" style="height:80px;margin-bottom:8px;" />
                 <h1 style="color:#fff;font-size:28px;margin:0;">Your CO₂ Emission Summary</h1>
               </td>
             </tr>
@@ -333,10 +333,24 @@ const handler = async (req: Request) => {
         `;
       }
       
+      // Add plain text version generator
+      function generateSummaryPlainText({ company, summary, reduction }) {
+        const companyName = company?.name || (typeof company === 'string' ? company : '-');
+        const totalCO2 = Number(summary.totalCO2).toFixed(2);
+        const totalCost = Number(summary.totalCost).toFixed(2);
+        const targetEmissions = reduction?.targetEmissions ? Number(reduction.targetEmissions).toFixed(2) : '-';
+        return `Your CO2 Emission Summary\n\nSummary\nEmissions Overview\nTotal emissions: ${totalCO2} kg CO2e\nTotal social cost: €${totalCost}\nEmissions per FTE: ${totalCO2} kg CO2e\n\nCompany Info\nCompany Name: ${companyName}\nCompany Address: ${company?.address || '-'}\nNumber of Employees (FTE): ${company?.fte || '-'}\n\nCO2 Reduction Target\nTarget Reduction Percentage: ${reduction?.target || '-'}% by ${reduction?.year || '-'}\nCurrent emissions: ${totalCO2} kg CO2e\nTarget emissions: ${targetEmissions} kg CO2e\nRequired reduction: ${(summary.totalCO2 && reduction.targetEmissions) ? (Number(summary.totalCO2) - Number(reduction.targetEmissions)).toFixed(2) : '-'} kg CO2e\n\nBook your onboarding call: https://calendly.com/circa-info/30min\nLet us show you how Circa can help your organization track and reduce its carbon footprint.\n\n© ${new Date().getFullYear()} Circa. All rights reserved.`;
+      }
+      
       try {
         // Send the email using Resend API
         console.log("Generating HTML email...");
         const html = generateSummaryHtml({
+          company,
+          summary,
+          reduction
+        });
+        const text = generateSummaryPlainText({
           company,
           summary,
           reduction
@@ -351,10 +365,11 @@ const handler = async (req: Request) => {
             'Authorization': `Bearer ${Deno.env.get('RESEND_API_KEY')}`
           },
           body: JSON.stringify({
-            from: 'Circa <info@circa.site>',
+            from: 'Circa <noreply@circa.site>',
             to: [to],
             subject: 'Your CO₂ Emission Summary from Circa',
-            html
+            html,
+            text
           })
         });
         
@@ -383,12 +398,12 @@ const handler = async (req: Request) => {
             success: true,
             message: `Detailed CO2 report has been sent to ${to}`,
             emailId: responseData?.id
-          }),
-          {
-            status: 200,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
       } catch (emailError) {
         console.error("Error in email sending process:", emailError);
         throw emailError;
