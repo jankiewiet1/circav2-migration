@@ -9,7 +9,7 @@ import emissionFactors from '@/data/emissionFactors.json';
 import { Chart, ArcElement, Tooltip as ChartTooltip, Legend } from 'chart.js';
 import ReductionTips from './ReductionTips';
 import { sendCO2SummaryEmail } from '@/services/emailService';
-import { Info } from 'lucide-react';
+import { Info, CheckCircle2, Sparkles } from 'lucide-react';
 Chart.register(ArcElement, ChartTooltip, Legend);
 
 const SOCIAL_COST_PER_KG = 0.7;
@@ -66,15 +66,21 @@ export default function CO2Calculator() {
   // Check if any value is entered
   const anyValueEntered = Object.values(inputs).some(i => i.amount && parseFloat(i.amount) > 0);
 
+  // Circa color palette
+  const CIRCA_COLORS = [
+    '#0E5D40', // Green
+    '#FBBF24', // Yellow
+    '#60A5FA', // Blue
+    '#F47216', // Orange
+  ];
+
   // Pie chart data
   const pieData = {
     labels: categoryResults.map(c => c.category),
     datasets: [
       {
         data: categoryResults.map(c => c.total),
-        backgroundColor: [
-          '#4ade80', '#fbbf24', '#60a5fa', '#f472b6', '#a78bfa', '#f87171', '#34d399', '#facc15', '#38bdf8', '#f472b6',
-        ],
+        backgroundColor: categoryResults.map((_, i) => CIRCA_COLORS[i % CIRCA_COLORS.length]),
       },
     ],
   };
@@ -125,7 +131,7 @@ export default function CO2Calculator() {
       return (
         <div>
           <h2 className="text-2xl font-bold mb-4">{t(categoryKey)}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {cat.options.map((opt, index) => {
               // Map index directly to translation key based on category
               let translationKey = '';
@@ -144,35 +150,51 @@ export default function CO2Calculator() {
               }
               
               const displayLabel = translationKey ? t(translationKey) : opt.label;
+              const value = parseFloat(inputs[opt.label]?.amount) || 0;
+              const emissions = value * opt.factor;
+              const cost = emissions * SOCIAL_COST_PER_KG;
               
               return (
-                <div key={opt.label} className="rounded-lg border border-gray-200 bg-white shadow-sm p-4 flex flex-col md:flex-row md:items-center gap-4">
-                  <div className="flex-1">
-                    <div className="mb-2">
-                      <label className="block font-medium mb-1">{displayLabel}</label>
-                      <Input
-                        type="number"
-                        min={0}
-                        value={inputs[opt.label]?.amount}
-                        onChange={e => handleInput(opt.label, e.target.value)}
-                        className="max-w-[120px] inline-block mr-2"
-                        placeholder="0"
-                      />
-                      <span className="ml-2 text-gray-500">{opt.unit}</span>
+                <div key={opt.label} className="rounded-lg border border-gray-200 bg-white shadow-sm p-4 flex flex-col gap-2">
+                  <div className="flex justify-between items-start">
+                    <label className="block font-medium text-base">{displayLabel}</label>
+                    <div className="flex flex-col items-end">
+                      <div className="flex items-center gap-1 text-sm">
+                        <span>Factor: <b>{opt.factor}</b></span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="text-blue-500 cursor-help flex items-center"><Info className="w-4 h-4" /></span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t('calculator.emissionFactorSource')}
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <span className="text-xs text-gray-500">kg CO₂e/{opt.unit}</span>
                     </div>
                   </div>
-                  <div className="flex-1 flex flex-col gap-1">
-                    <span className="text-sm">{t('calculator.factor')}: <b>{opt.factor}</b> kg CO₂e/{opt.unit}</span>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="text-xs text-blue-500 cursor-help flex items-center"><Info className="w-4 h-4" /></span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {t('calculator.emissionFactorSource')}
-                      </TooltipContent>
-                    </Tooltip>
-                    <span className="text-sm">{t('calculator.co2emissions')}: <b>{((parseFloat(inputs[opt.label]?.amount) || 0) * (opt.factor || 0)).toFixed(2)}</b> kg</span>
-                    <span className="text-sm">{t('calculator.socialCost')}: <b>€ {(((parseFloat(inputs[opt.label]?.amount) || 0) * (opt.factor || 0)) * SOCIAL_COST_PER_KG).toFixed(2)}</b></span>
+                  
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      value={inputs[opt.label]?.amount}
+                      onChange={e => handleInput(opt.label, e.target.value)}
+                      className="max-w-[160px] text-base"
+                      placeholder="0"
+                    />
+                    <span className="text-gray-500">{opt.unit}</span>
+                  </div>
+                  
+                  <div className="flex flex-col mt-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">CO₂ emissions:</span>
+                      <span className="font-medium">{emissions.toFixed(2)} kg</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Social cost:</span>
+                      <span className="font-medium">€ {cost.toFixed(2)}</span>
+                    </div>
                   </div>
                 </div>
               );
@@ -254,170 +276,204 @@ export default function CO2Calculator() {
     }
     // Summary step
     return (
-      <div>
-        <h2 className="text-2xl font-bold mb-4">{t('calculator.summary')}</h2>
+      <div className="w-full">
+        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+          <Sparkles className="text-circa-green h-7 w-7 animate-bounce" />
+          {t('calculator.summary')}
+        </h2>
         {!anyValueEntered ? (
           <div className="text-gray-500 text-center my-8">{t('calculator.pleaseEnterValue')}</div>
         ) : (
-          <div className="flex flex-col md:flex-row gap-8 items-start w-full">
-            {/* Pie Chart Section */}
-            <div className="flex-1 flex justify-center items-center w-full md:max-w-[420px] mx-auto md:mx-0">
-              <div className="w-full max-w-[380px]">
-                <Pie data={pieData} />
+          <>
+            <div className="flex flex-col lg:flex-row gap-8 items-stretch w-full">
+              {/* Pie Chart Section */}
+              <div className="flex-1 flex flex-col items-center justify-center w-full min-w-[260px] max-w-[420px] mx-auto lg:mx-0">
+                <div className="w-full flex flex-col items-center">
+                  <div className="relative z-10 bg-white rounded-full p-2 shadow-lg">
+                    <Pie data={pieData} options={{ plugins: { legend: { display: false } } }} />
+                  </div>
+                  {/* Modern horizontal legend */}
+                  <div className="flex flex-wrap justify-center gap-4 mt-6">
+                    {pieData.labels.map((label, i) => (
+                      <div key={label as string} className="flex items-center gap-2">
+                        <span className="inline-block w-4 h-4 rounded-full" style={{ backgroundColor: pieData.datasets[0].backgroundColor[i] }}></span>
+                        <span className="font-semibold text-gray-700 text-sm">{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
-            {/* Summary Cards Section */}
-            <div className="flex-1 flex flex-col gap-4 w-full">
-                <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-                  <h3 className="font-semibold text-lg mb-3">{t('calculator.emissionsOverview')}</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span>{t('calculator.totalEmissions')}:</span>
-                      <span className="font-medium">{totalCO2.toFixed(2)} kg CO₂e</span>
+
+              {/* Overview Section */}
+              <div className="flex-1 w-full">
+                <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                  <h3 className="font-bold text-2xl mb-4 text-circa-green flex items-center gap-2">
+                    <CheckCircle2 className="h-6 w-6" />
+                    {t('calculator.emissionsOverview')}
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    {/* Emissions Data */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-lg">
+                        <span className="text-gray-600">{t('calculator.totalEmissions')}</span>
+                        <span className="font-bold text-gray-900">{totalCO2.toFixed(2)} kg</span>
+                      </div>
+                      <div className="flex justify-between items-center text-lg">
+                        <span className="text-gray-600">{t('calculator.totalSocialCost')}</span>
+                        <span className="font-bold text-gray-900">€ {totalCost.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-lg">
+                        <span className="text-gray-600">{t('calculator.emissionsPerFTE')}</span>
+                        <span className="font-bold text-gray-900">{(totalCO2 / (fte || 1)).toFixed(2)} kg</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span>{t('calculator.totalSocialCost')}:</span>
-                      <span className="font-medium">€ {totalCost.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>{t('calculator.emissionsPerFTE')}:</span>
-                      <span className="font-medium">{(totalCO2 / (fte || 1)).toFixed(2)} kg CO₂e</span>
+
+                    {/* Company Info */}
+                    {companyName && (
+                      <div className="pt-4 border-t border-gray-100">
+                        <h4 className="font-semibold text-lg mb-2">{t('calculator.companyInfo')}</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-600">{t('calculator.companyName')}</span>
+                            <span className="font-medium">{companyName}</span>
+                          </div>
+                          {companyAddress && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-600">{t('calculator.companyAddress')}</span>
+                              <span className="font-medium">{companyAddress}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-600">{t('calculator.employees')}</span>
+                            <span className="font-medium">{fte} FTE</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Reduction Targets */}
+                    <div className="pt-4 border-t border-gray-100">
+                      <h4 className="font-semibold text-lg mb-2">{t('calculator.reductionTarget.title')}</h4>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">{t('calculator.reductionTarget.percentage')}</span>
+                          <span className="font-medium">{reductionTarget}% by {reductionYear}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">{t('calculator.reductionTarget.target')}</span>
+                          <span className="font-medium">{targetEmissions.toFixed(2)} kg CO₂e</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">{t('calculator.reductionTarget.required')}</span>
+                          <span className="font-medium">{(totalCO2 - targetEmissions).toFixed(2)} kg CO₂e</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-                {companyName && (
-                  <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-                    <h3 className="font-semibold text-lg mb-3">{t('calculator.companyInfo')}</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span>{t('calculator.companyName')}:</span>
-                        <span className="font-medium">{companyName}</span>
-                      </div>
-                      {companyAddress && (
-                        <div className="flex justify-between items-center">
-                          <span>{t('calculator.companyAddress')}:</span>
-                          <span className="font-medium">{companyAddress}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between items-center">
-                        <span>{t('calculator.employees')}:</span>
-                        <span className="font-medium">{fte} FTE</span>
-                      </div>
-                    </div>
+              </div>
+            </div>
+
+            {/* Recommendations Section */}
+            <div className="w-full mt-8">
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+                <div className="mb-8">
+                  <ReductionTips categoryResults={categoryResults} />
+                </div>
+
+                {/* Single Email Form */}
+                {!submitted ? (
+                  <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 items-center justify-center border-t border-gray-100 pt-6">
+                    <Input 
+                      type="email" 
+                      value={email} 
+                      onChange={e => setEmail(e.target.value)} 
+                      placeholder="your.email@example.com" 
+                      className="w-full sm:w-80 text-lg px-4 py-3 rounded-xl"
+                      required
+                    />
+                    <Button 
+                      type="submit" 
+                      className="w-full sm:w-auto bg-circa-green hover:bg-circa-green-dark text-lg px-8 py-3 rounded-xl"
+                    >
+                      {t('calculator.sendReport')}
+                    </Button>
+                  </form>
+                ) : (
+                  <div className="text-center border-t border-gray-100 pt-6">
+                    <p className="font-medium text-lg text-green-700">{t('calculator.thankYou')}</p>
                   </div>
                 )}
-                <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-                  <h3 className="font-semibold text-lg mb-3">{t('calculator.reductionTarget.title')}</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span>{t('calculator.reductionTarget.percentage')}:</span>
-                      <span className="font-medium">{reductionTarget}% by {reductionYear}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>{t('calculator.reductionTarget.current')}:</span>
-                      <span className="font-medium">{totalCO2.toFixed(2)} kg CO₂e</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>{t('calculator.reductionTarget.target')}:</span>
-                      <span className="font-medium">{targetEmissions.toFixed(2)} kg CO₂e</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>{t('calculator.reductionTarget.required')}:</span>
-                      <span className="font-medium">{(totalCO2 - targetEmissions).toFixed(2)} kg CO₂e</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-                  <h3 className="font-semibold text-lg mb-3">{t('calculator.recommendations')}</h3>
-                  <p className="text-sm text-gray-600 mb-4">{t('calculator.recommendationSubtitle')}</p>
-                  <ReductionTips categoryResults={categoryResults} />
-                  {!submitted && (
-                    <div className="mt-6">
-                      <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                          <label className="block font-medium mb-1">{t('calculator.emailReport')}</label>
-                          <Input 
-                            type="email" 
-                            value={email} 
-                            onChange={e => setEmail(e.target.value)} 
-                            placeholder="your.email@example.com" 
-                            className="w-full"
-                            required
-                          />
-                        </div>
-                        <Button 
-                          type="submit" 
-                          className="w-full bg-circa-green hover:bg-circa-green-dark"
-                        >
-                          {t('calculator.sendReport')}
-                        </Button>
-                      </form>
-                    </div>
-                  )}
-                  {submitted && (
-                    <div className="mt-6">
-                      <div className="bg-green-50 text-green-800 p-4 rounded">
-                        <p className="font-medium">{t('calculator.thankYou')}</p>
-                      </div>
-                    </div>
-                  )}
               </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     );
   };
 
   return (
-    <Card className="max-w-[1200px] w-full mx-auto">
-      <CardContent className="p-6">
-        {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            {steps.map((stepLabel, i) => (
-              <button
-                key={i}
-                onClick={() => setStep(i)}
-                className={`relative flex-1 text-xs md:text-sm p-2 text-center ${
-                  i === step ? 'text-circa-green font-medium' : 'text-gray-400'
-                }`}
-              >
-                {stepLabel}
-              </button>
-            ))}
+    <div className="w-full flex flex-col items-center">
+      {/* Title and subtitle above the card */}
+      <h1 className="text-3xl md:text-4xl font-bold text-circa-green text-center mt-8 mb-2">{t('calculator.title')}</h1>
+      <p className="text-lg text-gray-600 text-center mb-6">{t('calculator.subtitle')}</p>
+      <Card className="w-full max-w-7xl mx-auto min-h-[540px] md:min-h-[600px]">
+        <CardContent className="p-6">
+          {/* Progress Steps */}
+          <div className="mb-8 mt-2">
+            <div className="flex items-center justify-between mb-2 relative">
+              {/* Step labels */}
+              <div className="flex w-full justify-between">
+                {steps.map((stepLabel, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setStep(i)}
+                    className={`relative min-w-[100px] text-sm px-2 text-center transition-colors duration-200 ${
+                      i <= step ? 'text-circa-green font-medium' : 'text-gray-400'
+                    }`}
+                  >
+                    {stepLabel}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Classic thin progress bar */}
+            <div className="w-full h-1.5 bg-gray-200 relative mt-1 mb-2">
+              <div
+                className="absolute left-0 top-0 h-full bg-circa-green transition-all duration-300"
+                style={{ width: `${((step + 1) / steps.length) * 100}%` }}
+              />
+            </div>
+            <div className="text-right text-xs text-gray-500">
+              {t('common.step', { current: step + 1, total: steps.length })}
+            </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-            <div
-              className="bg-circa-green h-2 transition-all duration-500"
-              style={{ width: `${((step + 1) / steps.length) * 100}%` }}
-            ></div>
+          {/* Step Content with fade transition */}
+          <div className="w-full min-h-[320px] md:min-h-[380px] transition-all duration-300">
+            <div key={step} className="animate-fadein">
+              {renderStep()}
+            </div>
           </div>
-          <div className="text-right text-xs mt-1 text-gray-500">
-            {t('common.step', { current: step + 1, total: steps.length })}
+          {/* Navigation Buttons */}
+          <div className="flex flex-col sm:flex-row justify-between mt-8 gap-4 w-full">
+            <Button
+              onClick={goBack}
+              disabled={step === 0}
+              className="w-full sm:w-auto"
+            >
+              {t('common.back')}
+            </Button>
+            <Button
+              className="bg-circa-green hover:bg-circa-green-dark w-full sm:w-auto"
+              onClick={goNext}
+              disabled={step === steps.length - 1}
+            >
+              {t('common.next')}
+            </Button>
           </div>
-        </div>
-        
-        {/* Step Content */}
-        {renderStep()}
-        
-        {/* Navigation Buttons */}
-        <div className="flex justify-between mt-8">
-          <Button
-            onClick={goBack}
-            disabled={step === 0}
-          >
-            {t('common.back')}
-          </Button>
-          <Button
-            className="bg-circa-green hover:bg-circa-green-dark"
-            onClick={goNext}
-            disabled={step === steps.length - 1}
-          >
-            {t('common.next')}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 } 
