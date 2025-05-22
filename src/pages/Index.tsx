@@ -395,7 +395,6 @@ const Index = () => {
           {/* Chat Header */}
           <div className="bg-circa-green text-white p-4 flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <Logo className="h-6 w-auto text-white" />
               <h3 className="font-semibold">Circa Support</h3>
             </div>
             <button 
@@ -412,8 +411,8 @@ const Index = () => {
             {(!showCalendly || !window.Calendly) && (
               <div className="p-5 bg-gray-50 overflow-y-auto flex-1">
                 <div className="flex items-start mb-4">
-                  <div className="bg-white rounded-full h-10 w-10 border-2 border-circa-green flex items-center justify-center text-circa-green mr-3 flex-shrink-0 overflow-hidden">
-                    <Logo className="h-6 w-auto" />
+                  <div className="bg-white rounded-full h-10 w-10 flex items-center justify-center text-circa-green mr-3 flex-shrink-0 overflow-hidden">
+                    <img src="/icons/circa-icon.png" alt="Circa" className="h-8 w-8" />
                   </div>
                   <div className="bg-white border border-gray-100 rounded-lg p-3 max-w-[80%] shadow-sm">
                     <p className="text-sm text-gray-800">
@@ -423,8 +422,8 @@ const Index = () => {
                 </div>
                 
                 <div className="flex items-start mb-4">
-                  <div className="bg-white rounded-full h-10 w-10 border-2 border-circa-green flex items-center justify-center text-circa-green mr-3 flex-shrink-0 overflow-hidden">
-                    <Logo className="h-6 w-auto" />
+                  <div className="bg-white rounded-full h-10 w-10 flex items-center justify-center text-circa-green mr-3 flex-shrink-0 overflow-hidden">
+                    <img src="/icons/circa-icon.png" alt="Circa" className="h-8 w-8" />
                   </div>
                   <div className="bg-white border border-gray-100 rounded-lg p-3 max-w-[80%] shadow-sm">
                     <p className="text-sm text-gray-800">
@@ -452,8 +451,8 @@ const Index = () => {
                 
                 {!showButtons && !showCalendly && (
                   <div className="flex items-start mb-4">
-                    <div className="bg-white rounded-full h-10 w-10 border-2 border-circa-green flex items-center justify-center text-circa-green mr-3 flex-shrink-0 overflow-hidden">
-                      <Logo className="h-6 w-auto" />
+                    <div className="bg-white rounded-full h-10 w-10 flex items-center justify-center text-circa-green mr-3 flex-shrink-0 overflow-hidden">
+                      <img src="/icons/circa-icon.png" alt="Circa" className="h-8 w-8" />
                     </div>
                     <div className="bg-white border border-gray-100 rounded-lg p-3 max-w-[80%] shadow-sm">
                       <p className="text-sm text-gray-800">
@@ -491,8 +490,8 @@ const Index = () => {
             {!showCalendly && !showButtons && (
               <div className="flex-1 flex items-center justify-center p-6 bg-white">
                 <div className="text-center text-gray-500">
-                  <div className="rounded-full h-16 w-16 mx-auto mb-4 border-2 border-circa-green flex items-center justify-center overflow-hidden">
-                    <Logo className="h-8 w-auto text-circa-green" />
+                  <div className="rounded-full h-16 w-16 mx-auto mb-4 flex items-center justify-center overflow-hidden">
+                    <img src="/icons/circa-icon.png" alt="Circa" className="h-14 w-14" />
                   </div>
                   <p className="text-gray-700 font-medium">{t('chat.assistMessage', 'Ons team staat klaar om u te helpen.')}</p>
                   <p className="text-sm text-gray-500 mt-2">{t('chat.contactInfo', 'Email: info@circa.earth')}</p>
