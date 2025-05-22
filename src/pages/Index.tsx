@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Check, Upload, BarChart3, FileText, Target, ArrowUpRight, MessageCircle, Calendar, X } from "lucide-react";
+import { ArrowRight, Check, Upload, BarChart3, FileText, Target, ArrowUpRight, MessageCircle, Calendar, X, ChevronLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { Logo } from "@/components/branding/Logo";
@@ -20,7 +20,7 @@ import { useToast } from "@/components/ui/use-toast";
 declare global {
   interface Window {
     Calendly?: {
-      initInlineWidget: (options: { url: string, parentElement: HTMLElement }) => void;
+      initInlineWidget: (options: { url: string, parentElement: HTMLElement, prefill?: any }) => void;
       initPopupWidget: (options: { url: string }) => void;
       showPopupWidget: (url: string) => void;
     };
@@ -77,10 +77,30 @@ const Index = () => {
     if (chatOpen && showCalendly && window.Calendly) {
       const container = document.getElementById('calendly-inline-container');
       if (container) {
+        // Using customized URL parameters to hide certain elements
         window.Calendly.initInlineWidget({
-          url: 'https://calendly.com/circa-info/30min',
+          url: 'https://calendly.com/circa-info/30min?hide_landing_page_details=1&hide_gdpr=1&background_color=ffffff&text_color=333333&primary_color=14532d',
           parentElement: container
         });
+        
+        // Add custom styles to better fit the Calendly widget in the chat box
+        const styleEl = document.createElement('style');
+        styleEl.innerHTML = `
+          .calendly-inline-widget {
+            min-height: 600px;
+            height: 100%;
+          }
+          .calendly-inline-widget iframe {
+            height: 100% !important;
+          }
+          /* Hide some Calendly elements we don't want to show */
+          .calendly-spinner-container p,
+          .calendly-spinner-container h2,
+          .calendly-spinner-container h3 {
+            display: none !important;
+          }
+        `;
+        document.head.appendChild(styleEl);
       }
     }
   }, [chatOpen, showCalendly]);
@@ -371,9 +391,13 @@ const Index = () => {
 
       {/* Chat Interface with Calendly */}
       {chatOpen && (
-        <div className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[90vw] shadow-2xl rounded-xl overflow-hidden">
+        <div className="fixed bottom-[5%] right-6 z-50 w-[420px] max-w-[95vw] shadow-2xl rounded-xl overflow-hidden">
+          {/* Chat Header */}
           <div className="bg-circa-green text-white p-4 flex justify-between items-center">
-            <h3 className="font-medium">Circa Support</h3>
+            <div className="flex items-center gap-2">
+              <Logo className="h-6 w-auto text-white" />
+              <h3 className="font-semibold">Circa Support</h3>
+            </div>
             <button 
               onClick={() => setChatOpen(false)} 
               className="text-white hover:text-gray-200"
@@ -383,72 +407,95 @@ const Index = () => {
             </button>
           </div>
           
-          <div className="bg-white h-[500px] max-h-[70vh] flex flex-col">
-            <div className="p-4 bg-gray-50 border-b border-gray-200 overflow-y-auto">
-              <div className="flex items-start mb-4">
-                <div className="bg-circa-green rounded-full h-8 w-8 flex items-center justify-center text-white mr-3 flex-shrink-0">
-                  C
-                </div>
-                <div className="bg-gray-100 rounded-lg p-3 max-w-[85%]">
-                  <p className="text-sm">
-                    {t('chat.welcome', 'Welkom bij Circa! Hoe kunnen we u helpen?')}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-start mb-4">
-                <div className="bg-circa-green rounded-full h-8 w-8 flex items-center justify-center text-white mr-3 flex-shrink-0">
-                  C
-                </div>
-                <div className="bg-gray-100 rounded-lg p-3 max-w-[85%]">
-                  <p className="text-sm">
-                    {t('chat.bookQuestion', 'Wilt u een demo of adviesgesprek inplannen met ons team?')}
-                  </p>
-                </div>
-              </div>
-              
-              {showButtons && (
-                <div className="flex justify-center space-x-4 my-4">
-                  <button 
-                    onClick={() => handleBookingRequest(true)}
-                    className="bg-circa-green text-white px-4 py-2 rounded hover:bg-circa-green-dark transition-colors"
-                  >
-                    {t('common.yes', 'Ja')}
-                  </button>
-                  <button 
-                    onClick={() => handleBookingRequest(false)}
-                    className="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 transition-colors"
-                  >
-                    {t('common.no', 'Nee')}
-                  </button>
-                </div>
-              )}
-              
-              {!showButtons && !showCalendly && (
+          <div className="bg-white h-[650px] max-h-[80vh] flex flex-col">
+            {/* Chat Messages */}
+            {(!showCalendly || !window.Calendly) && (
+              <div className="p-5 bg-gray-50 overflow-y-auto flex-1">
                 <div className="flex items-start mb-4">
-                  <div className="bg-circa-green rounded-full h-8 w-8 flex items-center justify-center text-white mr-3 flex-shrink-0">
-                    C
+                  <div className="bg-white rounded-full h-10 w-10 border-2 border-circa-green flex items-center justify-center text-circa-green mr-3 flex-shrink-0 overflow-hidden">
+                    <Logo className="h-6 w-auto" />
                   </div>
-                  <div className="bg-gray-100 rounded-lg p-3 max-w-[85%]">
-                    <p className="text-sm">
-                      {t('chat.noBooking', 'Geen probleem! Als u vragen heeft over onze diensten, kunt u ons bereiken via info@circa.earth.')}
+                  <div className="bg-white border border-gray-100 rounded-lg p-3 max-w-[80%] shadow-sm">
+                    <p className="text-sm text-gray-800">
+                      {t('chat.welcome', 'Welkom bij Circa! Hoe kunnen we u helpen?')}
                     </p>
                   </div>
                 </div>
-              )}
-            </div>
-            
-            {showCalendly && (
-              <div id="calendly-inline-container" className="flex-1 overflow-auto">
-                {/* Calendly will be initialized here */}
+                
+                <div className="flex items-start mb-4">
+                  <div className="bg-white rounded-full h-10 w-10 border-2 border-circa-green flex items-center justify-center text-circa-green mr-3 flex-shrink-0 overflow-hidden">
+                    <Logo className="h-6 w-auto" />
+                  </div>
+                  <div className="bg-white border border-gray-100 rounded-lg p-3 max-w-[80%] shadow-sm">
+                    <p className="text-sm text-gray-800">
+                      {t('chat.bookQuestion', 'Wilt u een demo of adviesgesprek inplannen met ons team?')}
+                    </p>
+                  </div>
+                </div>
+                
+                {showButtons && (
+                  <div className="flex justify-center space-x-4 my-4">
+                    <button 
+                      onClick={() => handleBookingRequest(true)}
+                      className="bg-circa-green text-white px-6 py-2 rounded-full shadow hover:bg-circa-green-dark transition-colors flex items-center"
+                    >
+                      <span className="mr-1">{t('common.yes', 'Ja, graag')}</span> 👍
+                    </button>
+                    <button 
+                      onClick={() => handleBookingRequest(false)}
+                      className="bg-white border border-gray-300 text-gray-800 px-6 py-2 rounded-full shadow hover:bg-gray-50 transition-colors flex items-center"
+                    >
+                      <span className="mr-1">{t('common.no', 'Nee, bedankt')}</span> 🙂
+                    </button>
+                  </div>
+                )}
+                
+                {!showButtons && !showCalendly && (
+                  <div className="flex items-start mb-4">
+                    <div className="bg-white rounded-full h-10 w-10 border-2 border-circa-green flex items-center justify-center text-circa-green mr-3 flex-shrink-0 overflow-hidden">
+                      <Logo className="h-6 w-auto" />
+                    </div>
+                    <div className="bg-white border border-gray-100 rounded-lg p-3 max-w-[80%] shadow-sm">
+                      <p className="text-sm text-gray-800">
+                        {t('chat.noBooking', 'Geen probleem! Als u vragen heeft over onze diensten, kunt u ons bereiken via info@circa.earth.')}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             
-            {!showCalendly && (
+            {/* Calendly Widget */}
+            {showCalendly && (
+              <div className="flex flex-col h-full">
+                {/* Back Button for Calendly */}
+                <div className="bg-white p-3 border-b flex items-center">
+                  <button 
+                    onClick={() => {
+                      setShowCalendly(false);
+                      setShowButtons(true);
+                    }}
+                    className="flex items-center text-gray-600 hover:text-circa-green"
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    <span>{t('common.back', 'Terug')}</span>
+                  </button>
+                </div>
+                
+                <div id="calendly-inline-container" className="flex-1 overflow-hidden">
+                  {/* Calendly will be initialized here */}
+                </div>
+              </div>
+            )}
+            
+            {!showCalendly && !showButtons && (
               <div className="flex-1 flex items-center justify-center p-6 bg-white">
                 <div className="text-center text-gray-500">
-                  <Calendar className="h-12 w-12 mx-auto mb-2 text-circa-green opacity-50" />
-                  <p>{t('chat.assistMessage', 'Ons team staat klaar om u te helpen. Laat ons weten hoe we u kunnen assisteren.')}</p>
+                  <div className="rounded-full h-16 w-16 mx-auto mb-4 border-2 border-circa-green flex items-center justify-center overflow-hidden">
+                    <Logo className="h-8 w-auto text-circa-green" />
+                  </div>
+                  <p className="text-gray-700 font-medium">{t('chat.assistMessage', 'Ons team staat klaar om u te helpen.')}</p>
+                  <p className="text-sm text-gray-500 mt-2">{t('chat.contactInfo', 'Email: info@circa.earth')}</p>
                 </div>
               </div>
             )}
