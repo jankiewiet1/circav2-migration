@@ -411,8 +411,8 @@ const Index = () => {
             {(!showCalendly || !window.Calendly) && (
               <div className="p-5 bg-gray-50 overflow-y-auto flex-1">
                 <div className="flex items-start mb-4">
-                  <div className="bg-white rounded-full h-10 w-10 flex items-center justify-center text-circa-green mr-3 flex-shrink-0 overflow-hidden">
-                    <img src="/icons/circa-icon.png" alt="Circa" className="h-8 w-8" />
+                  <div className="bg-white rounded-sm h-10 w-10 flex items-center justify-center mr-3 flex-shrink-0 overflow-hidden">
+                    <img src="/icons/circa-icon.png" alt="Circa" className="h-10 w-10" />
                   </div>
                   <div className="bg-white border border-gray-100 rounded-lg p-3 max-w-[80%] shadow-sm">
                     <p className="text-sm text-gray-800">
@@ -422,8 +422,8 @@ const Index = () => {
                 </div>
                 
                 <div className="flex items-start mb-4">
-                  <div className="bg-white rounded-full h-10 w-10 flex items-center justify-center text-circa-green mr-3 flex-shrink-0 overflow-hidden">
-                    <img src="/icons/circa-icon.png" alt="Circa" className="h-8 w-8" />
+                  <div className="bg-white rounded-sm h-10 w-10 flex items-center justify-center mr-3 flex-shrink-0 overflow-hidden">
+                    <img src="/icons/circa-icon.png" alt="Circa" className="h-10 w-10" />
                   </div>
                   <div className="bg-white border border-gray-100 rounded-lg p-3 max-w-[80%] shadow-sm">
                     <p className="text-sm text-gray-800">
@@ -451,12 +451,12 @@ const Index = () => {
                 
                 {!showButtons && !showCalendly && (
                   <div className="flex items-start mb-4">
-                    <div className="bg-white rounded-full h-10 w-10 flex items-center justify-center text-circa-green mr-3 flex-shrink-0 overflow-hidden">
-                      <img src="/icons/circa-icon.png" alt="Circa" className="h-8 w-8" />
+                    <div className="bg-white rounded-sm h-10 w-10 flex items-center justify-center mr-3 flex-shrink-0 overflow-hidden">
+                      <img src="/icons/circa-icon.png" alt="Circa" className="h-10 w-10" />
                     </div>
                     <div className="bg-white border border-gray-100 rounded-lg p-3 max-w-[80%] shadow-sm">
                       <p className="text-sm text-gray-800">
-                        {t('chat.noBooking', 'Geen probleem! Als u vragen heeft over onze diensten, kunt u ons bereiken via info@circa.earth.')}
+                        {t('chat.noBooking', 'Geen probleem! Als u vragen heeft over onze diensten, kunt u ons bereiken via info@circa.site.')}
                       </p>
                     </div>
                   </div>
@@ -487,14 +487,15 @@ const Index = () => {
               </div>
             )}
             
+            {/* Final section with contact info */}
             {!showCalendly && !showButtons && (
               <div className="flex-1 flex items-center justify-center p-6 bg-white">
                 <div className="text-center text-gray-500">
-                  <div className="rounded-full h-16 w-16 mx-auto mb-4 flex items-center justify-center overflow-hidden">
-                    <img src="/icons/circa-icon.png" alt="Circa" className="h-14 w-14" />
+                  <div className="rounded-sm h-16 w-16 mx-auto mb-4 flex items-center justify-center overflow-hidden">
+                    <img src="/icons/circa-icon.png" alt="Circa" className="h-16 w-16" />
                   </div>
                   <p className="text-gray-700 font-medium">{t('chat.assistMessage', 'Ons team staat klaar om u te helpen.')}</p>
-                  <p className="text-sm text-gray-500 mt-2">{t('chat.contactInfo', 'Email: info@circa.earth')}</p>
+                  <p className="text-sm text-gray-500 mt-2">{t('chat.contactInfo', 'Email: info@circa.site')}</p>
                 </div>
               </div>
             )}
