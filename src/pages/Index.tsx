@@ -259,17 +259,17 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CO2 Calculator Demo Section */}
-      <section id="co2-calculator" className="py-14 bg-gray-50 border-y border-gray-100">
-        <div className="max-w-[1400px] w-full mx-auto px-4">
-          <CO2Calculator />
-        </div>
-      </section>
-
       {/* Value Proposition Stats */}
       <section className="py-14 bg-white border-y border-gray-100">
         <div className="max-w-[1400px] w-full mx-auto px-4">
           <ValueProposition />
+        </div>
+      </section>
+
+      {/* CO2 Calculator Demo Section */}
+      <section id="co2-calculator" className="py-14 bg-gray-50 border-y border-gray-100">
+        <div className="max-w-[1400px] w-full mx-auto px-4">
+          <CO2Calculator />
         </div>
       </section>
       

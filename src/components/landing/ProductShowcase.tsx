@@ -44,7 +44,7 @@ export function ProductShowcase() {
                 <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
                 <div className="w-3 h-3 rounded-full bg-green-400"></div>
                 <div className="absolute top-[7px] left-1/2 transform -translate-x-1/2 bg-white/90 rounded-md px-2 py-0.5 text-xs text-gray-500 font-medium">
-                  circa.earth
+                  circa.site
                 </div>
               </div>
               <div className="relative overflow-hidden" style={{ height: "240px" }}>

@@ -270,5 +270,12 @@
   "registration": {
     "successTitle": "Registrierung erfolgreich!",
     "successDescription": "Vielen Dank für Ihre Anmeldung bei Circa! Bitte überprüfen Sie Ihre E-Mail, um Ihr Konto zu verifizieren."
+  },
+  "chat": {
+    "welcome": "Willkommen bei Circa! Wie können wir Ihnen helfen?",
+    "bookQuestion": "Möchten Sie eine Demo oder ein Beratungsgespräch mit unserem Team vereinbaren?",
+    "noBooking": "Kein Problem! Wenn Sie Fragen zu unseren Dienstleistungen haben, erreichen Sie uns unter info@circa.site.",
+    "assistMessage": "Unser Team steht bereit, um Ihnen zu helfen.",
+    "contactInfo": "E-Mail: info@circa.site"
   }
 } 

@@ -1,4 +1,3 @@
-
 import { Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Scope1 from "@/pages/emissions/Scope1";
@@ -6,6 +5,7 @@ import Scope2 from "@/pages/emissions/Scope2";
 import Scope3 from "@/pages/emissions/Scope3";
 import ByCategory from "@/pages/emissions/ByCategory";
 import Overview from "@/pages/emissions/Overview";
+import DataUploadPage from "@/pages/DataUploadPage";
 
 export const emissionRoutes = (
   <>
@@ -46,6 +46,14 @@ export const emissionRoutes = (
       element={
         <ProtectedRoute>
           <Overview />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/emissions/data-upload"
+      element={
+        <ProtectedRoute>
+          <DataUploadPage />
         </ProtectedRoute>
       }
     />

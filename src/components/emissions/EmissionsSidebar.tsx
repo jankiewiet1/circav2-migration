@@ -14,7 +14,8 @@ import {
   Leaf,
   FileText,
   Settings,
-  Calculator
+  Calculator,
+  Upload
 } from 'lucide-react';
 
 type NavItemProps = {
@@ -53,6 +54,7 @@ export const EmissionsSidebar = () => {
     { to: "/emissions/overview", icon: <BarChart2 size={18} />, label: "Overview" },
     { to: "/emissions/by-category", icon: <PieChart size={18} />, label: "By Category" },
     { to: "/emissions/calculate", icon: <Calculator size={18} />, label: "Calculate" },
+    { to: "/emissions/data-upload", icon: <Upload size={18} />, label: "Data Upload" },
   ];
   
   const scopesGroup = [
