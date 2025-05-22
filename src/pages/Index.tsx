@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Check, Upload, BarChart3, FileText, Target, ArrowUpRight, MessageCircle } from "lucide-react";
+import { ArrowRight, Check, Upload, BarChart3, FileText, Target, ArrowUpRight, MessageCircle, Calendar } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { Logo } from "@/components/branding/Logo";
@@ -33,6 +33,49 @@ const Index = () => {
       // Clear state
       window.history.replaceState({}, document.title);
     }
+    
+    // Initialize Calendly widget
+    const loadCalendly = () => {
+      const head = document.querySelector('head');
+      const body = document.querySelector('body');
+      
+      // Add Calendly CSS
+      if (!document.querySelector('link[href="https://assets.calendly.com/assets/external/widget.css"]')) {
+        const link = document.createElement('link');
+        link.href = 'https://assets.calendly.com/assets/external/widget.css';
+        link.rel = 'stylesheet';
+        head?.appendChild(link);
+      }
+      
+      // Add Calendly script
+      if (!document.querySelector('script[src="https://assets.calendly.com/assets/external/widget.js"]')) {
+        const script = document.createElement('script');
+        script.src = 'https://assets.calendly.com/assets/external/widget.js';
+        script.onload = () => {
+          // Initialize widget after script loads
+          if (window.Calendly) {
+            window.Calendly.initBadgeWidget({
+              url: 'https://calendly.com/circa-info/30min',
+              text: 'Plan een demo met Circa',
+              color: '#14532D',
+              textColor: '#ffffff'
+            });
+          }
+        };
+        body?.appendChild(script);
+      }
+    };
+    
+    loadCalendly();
+    
+    // Cleanup function
+    return () => {
+      // Remove Calendly elements if component unmounts
+      const badge = document.querySelector('.calendly-badge-widget');
+      if (badge) {
+        badge.remove();
+      }
+    };
   }, [location.state, toast, t]);
   
   return (
@@ -294,14 +337,29 @@ const Index = () => {
         </div>
       </footer>
       
-      {/* Chat Widget */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <button className="bg-circa-green text-white rounded-full p-4 shadow-lg hover:bg-circa-green-dark transition-colors" aria-label={t('common.chat', 'Chat with us')}>
-          <MessageCircle className="h-6 w-6" />
+      {/* Manual Calendly button as fallback */}
+      <div className="fixed bottom-6 right-6 z-40 hidden">
+        <button 
+          onClick={() => window.Calendly && window.Calendly.initPopupWidget({url: 'https://calendly.com/circa-info/30min'})}
+          className="bg-[#14532D] text-white rounded-full py-3 px-5 shadow-lg hover:bg-circa-green-dark transition-colors flex items-center"
+          aria-label="Plan een demo met Circa"
+        >
+          <Calendar className="h-5 w-5 mr-2" />
+          <span>Plan een demo</span>
         </button>
       </div>
     </div>
   );
 };
+
+// Add TypeScript interface for Calendly
+declare global {
+  interface Window {
+    Calendly?: {
+      initBadgeWidget: (options: { url: string, text: string, color: string, textColor: string }) => void;
+      initPopupWidget: (options: { url: string }) => void;
+    };
+  }
+}
 
 export default Index;
