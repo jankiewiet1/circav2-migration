@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Check, Upload, BarChart3, FileText, Target, ArrowUpRight, MessageCircle, Calendar } from "lucide-react";
+import { ArrowRight, Check, Upload, BarChart3, FileText, Target, ArrowUpRight, MessageCircle, Calendar, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { Logo } from "@/components/branding/Logo";
@@ -16,10 +16,22 @@ import CO2Calculator from '@/components/landing/CO2Calculator';
 import { LanguageSelector } from '@/components/ui/language-selector';
 import { useToast } from "@/components/ui/use-toast";
 
+// Add TypeScript interface for Calendly
+declare global {
+  interface Window {
+    Calendly?: {
+      initInlineWidget: (options: { url: string, parentElement: HTMLElement }) => void;
+      initPopupWidget: (options: { url: string }) => void;
+      showPopupWidget: (url: string) => void;
+    };
+  }
+}
+
 const Index = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const { toast } = useToast();
+  const [chatOpen, setChatOpen] = useState(false);
   
   useEffect(() => {
     // Check if user was redirected from registration
@@ -37,7 +49,6 @@ const Index = () => {
     // Initialize Calendly widget
     const loadCalendly = () => {
       const head = document.querySelector('head');
-      const body = document.querySelector('body');
       
       // Add Calendly CSS
       if (!document.querySelector('link[href="https://assets.calendly.com/assets/external/widget.css"]')) {
@@ -51,32 +62,26 @@ const Index = () => {
       if (!document.querySelector('script[src="https://assets.calendly.com/assets/external/widget.js"]')) {
         const script = document.createElement('script');
         script.src = 'https://assets.calendly.com/assets/external/widget.js';
-        script.onload = () => {
-          // Initialize widget after script loads
-          if (window.Calendly) {
-            window.Calendly.initBadgeWidget({
-              url: 'https://calendly.com/circa-info/30min',
-              text: 'Plan een demo met Circa',
-              color: '#14532D',
-              textColor: '#ffffff'
-            });
-          }
-        };
-        body?.appendChild(script);
+        script.async = true;
+        head?.appendChild(script);
       }
     };
     
     loadCalendly();
-    
-    // Cleanup function
-    return () => {
-      // Remove Calendly elements if component unmounts
-      const badge = document.querySelector('.calendly-badge-widget');
-      if (badge) {
-        badge.remove();
-      }
-    };
   }, [location.state, toast, t]);
+
+  // Initialize Calendly inline widget when chat is opened
+  useEffect(() => {
+    if (chatOpen && window.Calendly) {
+      const container = document.getElementById('calendly-inline-container');
+      if (container) {
+        window.Calendly.initInlineWidget({
+          url: 'https://calendly.com/circa-info/30min',
+          parentElement: container
+        });
+      }
+    }
+  }, [chatOpen]);
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -337,29 +342,64 @@ const Index = () => {
         </div>
       </footer>
       
-      {/* Manual Calendly button as fallback */}
-      <div className="fixed bottom-6 right-6 z-40 hidden">
+      {/* Chat Widget Button */}
+      <div className="fixed bottom-6 right-6 z-50">
         <button 
-          onClick={() => window.Calendly && window.Calendly.initPopupWidget({url: 'https://calendly.com/circa-info/30min'})}
-          className="bg-[#14532D] text-white rounded-full py-3 px-5 shadow-lg hover:bg-circa-green-dark transition-colors flex items-center"
-          aria-label="Plan een demo met Circa"
+          onClick={() => setChatOpen(true)}
+          className="bg-circa-green text-white rounded-full p-4 shadow-lg hover:bg-circa-green-dark transition-colors" 
+          aria-label={t('common.chat', 'Chat with us')}
         >
-          <Calendar className="h-5 w-5 mr-2" />
-          <span>Plan een demo</span>
+          <MessageCircle className="h-6 w-6" />
         </button>
       </div>
+
+      {/* Chat Interface with Calendly */}
+      {chatOpen && (
+        <div className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[90vw] shadow-2xl rounded-xl overflow-hidden">
+          <div className="bg-circa-green text-white p-4 flex justify-between items-center">
+            <h3 className="font-medium">Circa Support</h3>
+            <button 
+              onClick={() => setChatOpen(false)} 
+              className="text-white hover:text-gray-200"
+              aria-label="Close chat"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          
+          <div className="bg-white h-[500px] max-h-[70vh] flex flex-col">
+            <div className="p-4 bg-gray-50 border-b border-gray-200">
+              <div className="flex items-start mb-4">
+                <div className="bg-circa-green rounded-full h-8 w-8 flex items-center justify-center text-white mr-3 flex-shrink-0">
+                  C
+                </div>
+                <div className="bg-gray-100 rounded-lg p-3 max-w-[85%]">
+                  <p className="text-sm">
+                    {t('chat.welcome', 'Welkom bij Circa! Hoe kunnen we u helpen?')}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start mb-4">
+                <div className="bg-circa-green rounded-full h-8 w-8 flex items-center justify-center text-white mr-3 flex-shrink-0">
+                  C
+                </div>
+                <div className="bg-gray-100 rounded-lg p-3 max-w-[85%]">
+                  <p className="text-sm">
+                    {t('chat.bookDemo', 'Plan direct een demo of adviesgesprek met ons team.')}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div id="calendly-inline-container" className="flex-1 overflow-auto">
+              {/* Calendly will be initialized here */}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
-// Add TypeScript interface for Calendly
-declare global {
-  interface Window {
-    Calendly?: {
-      initBadgeWidget: (options: { url: string, text: string, color: string, textColor: string }) => void;
-      initPopupWidget: (options: { url: string }) => void;
-    };
-  }
-}
 
 export default Index;
