@@ -4,15 +4,19 @@ Carbon Data Recognition Agent
 This agent is responsible for processing uploaded files,
 extracting data related to carbon emissions, and mapping
 that data to our standard schema.
+
+Now updated to use the Model Context Protocol (MCP).
 """
 
 import os
 import json
+import requests
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
 from openai_agents import Agent, Tool, Message
 from openai_agents.tools import file_search
+from openai_agents.mcp import MCPContext, MCPAction
 
 # Initialize the agent with the most capable model
 data_recognition_agent = Agent(
@@ -44,8 +48,48 @@ data_recognition_agent = Agent(
     - description: Additional context or description
     
     For any missing fields, use 'unknown' as the value.
+    
+    You have access to the Model Context Protocol (MCP) which provides additional context
+    about the carbon accounting platform and company data.
     """
 )
+
+# MCP Context handler
+class CarbonMCPContext(MCPContext):
+    """MCP Context provider for carbon accounting data"""
+    
+    def __init__(self, company_id: str, api_base_url: str = "http://localhost:3000"):
+        self.company_id = company_id
+        self.api_base_url = api_base_url
+        self._context_data = None
+    
+    async def fetch_context(self) -> Dict[str, Any]:
+        """Fetch MCP context from the API"""
+        if self._context_data:
+            return self._context_data
+            
+        try:
+            url = f"{self.api_base_url}/api/mcp-context?companyId={self.company_id}"
+            response = requests.get(url)
+            response.raise_for_status()
+            self._context_data = response.json()
+            return self._context_data
+        except Exception as e:
+            print(f"Error fetching MCP context: {e}")
+            # Return minimal context if API call fails
+            return {
+                "version": "1.0",
+                "timestamp": datetime.now().isoformat(),
+                "company": {"id": self.company_id, "name": "Unknown Company"},
+                "carbonData": {"entries": [], "summary": {"totalEmissions": {"total": 0}}},
+                "user": {"id": "unknown", "role": "user"}
+            }
+
+# Register MCP context with the agent
+@data_recognition_agent.mcp_context_provider
+def get_mcp_context(company_id: str) -> MCPContext:
+    """Provide MCP context to the agent"""
+    return CarbonMCPContext(company_id)
 
 @data_recognition_agent.tool
 def detect_file_type(file_path: str) -> Dict[str, Any]:
@@ -166,12 +210,80 @@ def validate_mapped_data(mapped_data: Dict[str, Any]) -> Dict[str, Any]:
         "mapped_data": mapped_data
     }
 
-def process_file(file_path: str) -> Dict[str, Any]:
+# Register MCP actions
+@data_recognition_agent.mcp_action("extractDataFromDocument")
+async def extract_data_from_document(document_url: str, document_type: str, extraction_hints: Optional[List[str]] = None) -> Dict[str, Any]:
+    """
+    MCP Action: Extract carbon data from a document
+    
+    Args:
+        document_url: URL to the document
+        document_type: Type of document (PDF, EXCEL, CSV, IMAGE)
+        extraction_hints: Optional hints for extraction
+        
+    Returns:
+        Dict containing extracted data entries
+    """
+    try:
+        # In a real implementation, download the document from the URL
+        # and process it using the appropriate method
+        
+        # For now, return a placeholder response
+        return {
+            "success": True,
+            "extractedEntries": [
+                {
+                    "date": datetime.now().strftime("%Y-%m-%d"),
+                    "type": "electricity",
+                    "amount": 1250.0,
+                    "amount_unit": "kWh",
+                    "supplier": "Example Energy Co.",
+                    "description": "Monthly electricity consumption"
+                }
+            ],
+            "confidence": 0.9,
+            "unmappedFields": [],
+            "warnings": []
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "extractedEntries": [],
+            "confidence": 0.0,
+            "unmappedFields": [],
+            "warnings": [str(e)]
+        }
+
+@data_recognition_agent.mcp_action("validateDataEntry")
+async def validate_data_entry(data_entry_id: str, validation: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    MCP Action: Validate a data entry
+    
+    Args:
+        data_entry_id: ID of the data entry to validate
+        validation: List of field validations
+        
+    Returns:
+        Dict containing validation results
+    """
+    # In a real implementation, this would validate the data entry
+    # against business rules and data quality standards
+    
+    # For now, return a placeholder response
+    return {
+        "valid": True,
+        "dataEntryId": data_entry_id,
+        "errors": [],
+        "warnings": []
+    }
+
+def process_file(file_path: str, company_id: str = None) -> Dict[str, Any]:
     """
     Process a file and extract carbon accounting data.
     
     Args:
         file_path: Path to the uploaded file
+        company_id: Optional company ID for MCP context
         
     Returns:
         Dict containing processed data in our standard schema
@@ -181,6 +293,9 @@ def process_file(file_path: str) -> Dict[str, Any]:
     extracted_data = extract_text_from_file(file_path)
     mapped_data = map_to_carbon_schema(extracted_data)
     validated_data = validate_mapped_data(mapped_data)
+    
+    # If company_id is provided, we could use MCP context to enhance processing
+    # This would be implemented in a real system
     
     return {
         "success": validated_data["is_valid"],
@@ -195,5 +310,5 @@ def process_file(file_path: str) -> Dict[str, Any]:
 if __name__ == "__main__":
     # For testing purposes
     test_file = "example.pdf"
-    result = process_file(test_file)
+    result = process_file(test_file, company_id="test-company-id")
     print(json.dumps(result, indent=2)) 

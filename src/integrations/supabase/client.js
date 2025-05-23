@@ -1,2 +1,2 @@
 // Re-export from TypeScript for ES module compatibility
-export { supabase } from './client.ts'; 
+export { supabase, ensureSupabaseInitialized } from './client.ts'; 

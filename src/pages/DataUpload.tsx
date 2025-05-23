@@ -12,6 +12,8 @@ import {
   RefreshCw,
   Info,
   Sparkles,
+  FileText,
+  PlusCircle,
 } from "lucide-react";
 import { MainLayout } from "@/components/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,8 +21,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { calculateDynamicEmissions } from "@/services/emissionService";
-import { AIDataUploadContainer } from "@/components/dataUpload/AIDataUploadContainer";
+import { AIUploader } from "@/components/dataUpload/AIUploader";
 import { DataEntryService } from "@/services/dataEntryService";
+import { CSVUploader } from "@/components/dataUpload/CSVUploader";
+import { ManualEntryForm } from "@/components/dataUpload/ManualEntryForm";
 
 type EmissionEntry = {
   date: string;
@@ -77,20 +81,14 @@ interface CalculationDetails {
   climatiq_region: string;
   climatiq_year: number;
   calculated_at: string;
-  request_params: {
-    emission_factor: {
-      activity_id: string;
-      data_version: string;
-    };
-    parameters: Record<string, any>;
-  };
+  request_params: any;
 }
 
 export default function DataUpload() {
   const { company } = useCompany();
 
-  const [mode, setMode] = useState<"csv" | "manual">("csv");
-  const [activeTab, setActiveTab] = useState<string>("upload");
+  const [activeTab, setActiveTab] = useState<string>("csv");
+  const [calculationTab, setCalculationTab] = useState<boolean>(false);
   const [uiMode, setUiMode] = useState<"classic" | "ai">("classic");
 
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -119,10 +117,54 @@ export default function DataUpload() {
   // Show a toast about the AI mode when component mounts
   useEffect(() => {
     toast.info(
-      "Try our new AI-powered data upload! Click the 'AI-Powered' button in the top right.",
+      "Try our new AI-powered data upload! Select the 'AI Upload' tab.",
       { duration: 6000 }
     );
-  }, []);
+    
+    // Debug: check database tables
+    if (company) {
+      checkDatabaseTables();
+    }
+  }, [company]);
+  
+  // Debug function to check if tables exist
+  const checkDatabaseTables = async () => {
+    try {
+      // Check emission_entries table
+      console.log("Checking emission_entries table...");
+      const { data: emissionEntries, error: emissionError } = await supabase
+        .from('emission_entries')
+        .select('*')
+        .limit(1);
+      
+      if (emissionError) {
+        console.error("Error accessing emission_entries:", emissionError);
+      } else {
+        console.log("Emission entries table exists, returned:", emissionEntries);
+        
+        // Get table structure - removing the problematic RPC call
+        console.log("Table structure check skipped - function not available");
+      }
+      
+      // Check company access
+      if (company) {
+        console.log("Checking company access...");
+        const { data: companyData, error: companyError } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('id', company.id)
+          .single();
+          
+        if (companyError) {
+          console.error("Error accessing company:", companyError);
+        } else {
+          console.log("Successfully accessed company:", companyData);
+        }
+      }
+    } catch (error) {
+      console.error("Database check error:", error);
+    }
+  };
 
   const parseCsv = useCallback(
     async (file: File) => {
@@ -420,405 +462,250 @@ export default function DataUpload() {
       console.error('Error fetching data entry stats:', error);
     }
   };
-  
-  // Migrate data from emission_entries to data_entry
-  const migrateToDataEntry = async () => {
-    if (!company) return;
-    
-    try {
-      const result = await DataEntryService.migrateEmissionEntries(company.id);
-      
-      if (result.success) {
-        toast.success(`Successfully migrated ${result.count} entries`);
-        fetchDataEntryStats();
-      } else {
-        toast.error(result.message);
-      }
-    } catch (error) {
-      console.error('Error migrating data:', error);
-      toast.error('Failed to migrate data');
-    }
-  };
 
   return (
     <MainLayout>
-      <div className="max-w-5xl mx-auto p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-semibold">Emission Data Management</h1>
-          
-          {/* UI Mode Toggle */}
-          <div className="flex items-center space-x-2">
-            <Button
-              variant={uiMode === "classic" ? "default" : "outline"}
-              onClick={() => setUiMode("classic")}
-              className="px-3 h-9"
-            >
-              Classic Mode
-            </Button>
-            <Button
-              variant={uiMode === "ai" ? "default" : "outline"}
-              onClick={() => setUiMode("ai")}
-              className="px-3 h-9 flex items-center space-x-1"
-            >
-              <Sparkles className="h-4 w-4 mr-1" />
-              <span>AI-Powered</span>
-            </Button>
+      <div className="container mx-auto py-6 space-y-6 max-w-screen-2xl">
+        <div className="flex justify-between items-center mb-2">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Data Upload</h1>
+            <p className="text-gray-500 mt-1">
+              Upload and manage your emission data
+            </p>
           </div>
+          <Button
+            variant="outline"
+            onClick={() => setCalculationTab(!calculationTab)}
+            className="border-gray-200"
+          >
+            <Calculator className="w-4 h-4 mr-2" />
+            {calculationTab ? "Back to Upload" : "View Calculations"}
+          </Button>
         </div>
-        
-        {uiMode === "classic" ? (
-          // Original UI
-          <Tabs defaultValue="upload" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-6">
-              <TabsTrigger value="upload">Data Upload</TabsTrigger>
-              <TabsTrigger value="calculations">Calculation Details</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="upload">
-              <div className="flex space-x-4 mb-6">
-                <Button
-                  onClick={() => setMode("csv")}
-                  variant={mode === "csv" ? "default" : "outline"}
-                  className="px-5"
-                >
-                  Upload CSV
-                </Button>
-                <Button
-                  onClick={() => setMode("manual")}
-                  variant={mode === "manual" ? "default" : "outline"}
-                  className="px-5"
-                >
-                  Add Manual Entry
-                </Button>
-              </div>
 
-              {/* AI-powered mode callout */}
-              <div className="mb-6 rounded border border-green-400 bg-green-50 p-4 text-sm text-green-700 flex items-start space-x-3">
-                <Sparkles className="shrink-0 mt-1 h-6 w-6" />
-                <div>
-                  <p className="mb-2 font-semibold">New AI-Powered Upload Available!</p>
-                  <p>Our new AI assistant can automatically extract data from PDFs and more complex formats.</p>
-                  <Button 
-                    variant="link" 
-                    className="p-0 h-auto text-green-700 font-semibold underline"
-                    onClick={() => setUiMode("ai")}
-                  >
-                    Try AI-Powered Upload
-                  </Button>
-                </div>
-              </div>
+        {!calculationTab ? (
+          <>
+            <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="mb-4 bg-gray-100 p-1 w-full justify-start">
+                <TabsTrigger value="manual" className="data-[state=active]:bg-white flex-1">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Manual Entry
+                </TabsTrigger>
+                <TabsTrigger value="csv" className="data-[state=active]:bg-white flex-1">
+                  <Upload className="mr-2 h-4 w-4" />
+                  CSV Upload
+                </TabsTrigger>
+                <TabsTrigger value="ai" className="data-[state=active]:bg-white flex-1">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  AI Upload
+                </TabsTrigger>
+              </TabsList>
 
-              {mode === "csv" && (
-                <section>
-                  <div
-                    {...{
-                      onDragOver: (e) => e.preventDefault(),
-                      onDrop: (e: React.DragEvent<HTMLDivElement>) => {
-                        e.preventDefault();
-                        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                          parseCsv(e.dataTransfer.files[0]);
-                          setCsvFile(e.dataTransfer.files[0]);
-                        }
-                      },
-                    }}
-                    className={`border-2 border-dashed rounded-lg p-12 mb-6 cursor-pointer text-center transition-colors ${
-                      csvFile
-                            ? "border-green-600 bg-green-50"
-                            : "border-gray-300 hover:border-green-500"
-                    }`}
-                  >
-                    <input
-                      type="file"
-                      accept=".csv"
-                      className="hidden"
-                      onChange={handleCsvFileChange}
-                      id="csv-file-upload"
-                    />
-                    <label htmlFor="csv-file-upload" className="cursor-pointer">
-                      <Upload className="mx-auto mb-4 text-gray-500" size={48} />
-                      <p className="text-gray-700 text-lg font-medium">
-                        {csvFile
-                          ? csvFile.name
-                          : "Drag and drop your CSV file here, or click to browse"}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Supported format: .csv
-                      </p>
-                    </label>
-                  </div>
-
-                  {validationErrors.length > 0 && (
-                    <div className="mb-6 rounded border border-red-400 bg-red-50 p-4 text-sm text-red-700 flex items-start space-x-3">
-                      <AlertTriangle className="shrink-0 mt-1 h-6 w-6" />
-                      <div>
-                        <p className="mb-2 font-semibold">Validation Errors:</p>
-                        <ul className="ml-6 list-disc max-h-40 overflow-y-auto">
-                          {validationErrors.map((err, i) => (
-                            <li key={i}>{err}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  )}
-
-                  {csvRows.length > 0 && (
-                    <div className="mb-6 max-h-96 overflow-y-auto rounded border border-gray-300 shadow-sm">
-                      <table className="w-full text-sm table-fixed border-collapse">
-                        <thead className="bg-gray-50 sticky top-0 z-10">
-                          <tr className="border-b border-gray-200">
-                            <th className="p-3 text-left">Status</th>
-                            <th className="p-3 text-left">Date</th>
-                            <th className="p-3 text-left">Category</th>
-                            <th className="p-3 text-left">Description</th>
-                            <th className="p-3 text-right">Quantity</th>
-                            <th className="p-3 text-left">Unit</th>
-                            <th className="p-3 text-right">Scope</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {csvRows.map((row, idx) => (
-                            <tr
-                              key={idx}
-                                  className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                            >
-                              <td className="p-3">
-                                    <Check className="text-green-600" aria-label="New" />
-                              </td>
-                              <td className="p-3">{row.date}</td>
-                              <td className="p-3">{row.category}</td>
-                              <td className="p-3">{row.description}</td>
-                              <td className="p-3 text-right">{row.quantity}</td>
-                              <td className="p-3">{row.unit}</td>
-                              <td className="p-3 text-right">{row.scope}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      <div className="p-2 text-xs text-gray-500">
-                            Showing {csvRows.length} rows
-                      </div>
-                    </div>
-                  )}
-
-                  <Button
-                    onClick={uploadCsvData}
-                    disabled={
-                      isUploadingCsv ||
-                      csvRows.length === 0 ||
-                      validationErrors.length > 0
-                    }
-                        className="w-full py-3"
-                  >
-                    {isUploadingCsv ? "Uploading..." : "Upload CSV Data"}
-                  </Button>
-
-                  <div className="mt-6 text-sm text-gray-700">
-                    <a
-                      href="/templates/emissions_template.csv"
-                      download
-                          className="text-green-600 underline hover:text-green-700"
-                    >
-                      Download emissions CSV template
-                    </a>
-                  </div>
-                  
-                  {/* Recalculate button */}
-                  <div className="mt-8 border-t pt-6">
-                    <h3 className="text-lg font-semibold mb-4">Calculate Emissions</h3>
-                    <Button 
-                      onClick={recalculateEmissions} 
-                      disabled={isCalculating}
-                      className="flex items-center"
+              <TabsContent value="manual" className="space-y-6">
+                <div className="grid grid-cols-1 gap-6">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-lg font-medium">Manual Data Entry</h2>
+                    <Button
                       variant="outline"
+                      size="sm"
+                      onClick={recalculateEmissions}
+                      disabled={isCalculating}
+                      className="text-emerald-600 border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50"
                     >
                       {isCalculating ? (
-                        <>
-                          <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                          Calculating...
-                        </>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
-                        <>
-                          <Calculator className="mr-2 h-4 w-4" />
-                          Recalculate Emissions
-                        </>
+                        <Calculator className="mr-2 h-4 w-4" />
                       )}
+                      Recalculate Emissions
                     </Button>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Recalculates emission values for entries using the Climatiq API.
-                    </p>
                   </div>
-                </section>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="calculations">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Recent Emission Calculations</CardTitle>
-                  <Button 
-                    onClick={fetchCalculationDetails} 
-                    variant="outline" 
-                    size="sm"
-                    disabled={isLoadingDetails}
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-1 ${isLoadingDetails ? 'animate-spin' : ''}`} />
-                    Refresh
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  {isLoadingDetails ? (
-                    <div className="text-center py-8">Loading calculation details...</div>
-                  ) : calculationDetails.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <Info className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                      <p>No calculation details found.</p>
-                      <Button 
-                        onClick={recalculateEmissions} 
-                        className="mt-4"
-                        variant="outline"
-                      >
-                        Calculate Emissions Now
-                      </Button>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="mb-6">
-                        <h3 className="text-sm font-medium mb-2">Calculation Summary</h3>
-                        <div className="grid grid-cols-3 gap-4">
-                          <div className="bg-blue-50 p-4 rounded-md text-center">
-                            <p className="text-sm text-gray-500">Total Entries</p>
-                            <p className="text-2xl font-bold mt-1">{calculationDetails.length}</p>
-                          </div>
-                          <div className="bg-green-50 p-4 rounded-md text-center">
-                            <p className="text-sm text-gray-500">Successful</p>
-                            <p className="text-2xl font-bold mt-1 text-green-600">
-                              {calculationDetails.filter(d => d.total_emissions > 0).length}
-                            </p>
-                          </div>
-                          <div className="bg-orange-50 p-4 rounded-md text-center">
-                            <p className="text-sm text-gray-500">Latest Calculation</p>
-                            <p className="text-lg font-bold mt-1">
-                              {calculationDetails.length > 0 
-                                ? new Date(calculationDetails[0].calculated_at).toLocaleDateString() 
-                                : '-'}
-                            </p>
-                          </div>
+                  <ManualEntryForm onEntryCreated={recalculateEmissions} />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="csv" className="space-y-6">
+                <div className="grid grid-cols-1 gap-6">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-lg font-medium">CSV Data Upload</h2>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={recalculateEmissions}
+                      disabled={isCalculating}
+                      className="text-emerald-600 border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50"
+                    >
+                      {isCalculating ? (
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Calculator className="mr-2 h-4 w-4" />
+                      )}
+                      Recalculate Emissions
+                    </Button>
+                  </div>
+                  <CSVUploader onUploadComplete={recalculateEmissions} />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="ai" className="space-y-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-medium">AI-Powered Data Upload</h2>
+                </div>
+                <AIUploader onUploadComplete={recalculateEmissions} />
+              </TabsContent>
+            </Tabs>
+          </>
+        ) : (
+          // Calculation details section
+          <div className="space-y-6">
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-lg font-medium">Emission Calculation Results</h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchCalculationDetails}
+                disabled={isLoadingDetails}
+                className="text-emerald-600 border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50"
+              >
+                {isLoadingDetails ? (
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                Refresh Data
+              </Button>
+            </div>
+
+            <Card>
+              <CardContent className="pt-6">
+                {isLoadingDetails ? (
+                  <div className="text-center py-8">Loading calculation details...</div>
+                ) : calculationDetails.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Info className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p>No calculation details found.</p>
+                    <Button 
+                      onClick={recalculateEmissions} 
+                      className="mt-4"
+                      variant="outline"
+                    >
+                      Calculate Emissions Now
+                    </Button>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="mb-6">
+                      <h3 className="text-sm font-medium mb-2">Calculation Summary</h3>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="bg-blue-50 p-4 rounded-md text-center">
+                          <p className="text-sm text-gray-500">Total Entries</p>
+                          <p className="text-2xl font-bold mt-1">{calculationDetails.length}</p>
                         </div>
-                      </div>
-                      
-                      <Accordion type="single" collapsible>
-                        {calculationDetails.map((detail, index) => (
-                          <AccordionItem key={detail.id} value={detail.id}>
-                            <AccordionTrigger className="hover:bg-gray-50 px-3">
-                              <div className="flex flex-1 items-center justify-between pr-2">
-                                <div className="flex items-center">
-                                  <div className="mr-4 w-6 text-center">
-                                    {index + 1}.
-                                  </div>
-                                  <div className="text-left">
-                                    <div className="font-medium">{detail.description}</div>
-                                    <div className="text-sm text-gray-500">
-                                      {detail.category} · {detail.quantity} {detail.unit}
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <div className="font-medium">
-                                    {detail.total_emissions} {detail.emissions_unit}
-                                  </div>
-                                  <div className="text-xs text-gray-500">
-                                    {new Date(detail.calculated_at).toLocaleString()}
-                                  </div>
-                                </div>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="bg-gray-50 px-4 py-3">
-                              <div className="text-xs">
-                                <div className="grid grid-cols-2 gap-2 mb-2">
-                                  <div>
-                                    <span className="font-medium">Activity ID:</span>{" "}
-                                    {detail.climatiq_activity_id}
-                                  </div>
-                                  <div>
-                                    <span className="font-medium">Source:</span>{" "}
-                                    {detail.climatiq_source}
-                                  </div>
-                                  <div>
-                                    <span className="font-medium">Factor:</span>{" "}
-                                    {detail.climatiq_factor_name}
-                                  </div>
-                                  <div>
-                                    <span className="font-medium">Region:</span>{" "}
-                                    {detail.climatiq_region || "Global"}
-                                  </div>
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        ))}
-                      </Accordion>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-              
-              {/* New Data Entry Stats */}
-              {dataEntryStats.total > 0 && (
-                <Card className="mt-6">
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>New Data Entry Format</CardTitle>
-                    <Badge variant="outline" className="bg-green-50">
-                      <Sparkles className="h-3 w-3 mr-1" />
-                      AI-Ready
-                    </Badge>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-4 gap-4">
-                      <div className="bg-gray-50 p-4 rounded-md text-center">
-                        <p className="text-sm text-gray-500">Total Entries</p>
-                        <p className="text-2xl font-bold mt-1">{dataEntryStats.total}</p>
-                      </div>
-                      <div className="bg-blue-50 p-4 rounded-md text-center">
-                        <p className="text-sm text-gray-500">Processed</p>
-                        <p className="text-2xl font-bold mt-1 text-blue-600">{dataEntryStats.processed}</p>
-                      </div>
-                      <div className="bg-green-50 p-4 rounded-md text-center">
-                        <p className="text-sm text-gray-500">Validated</p>
-                        <p className="text-2xl font-bold mt-1 text-green-600">{dataEntryStats.validated}</p>
-                      </div>
-                      <div className="bg-red-50 p-4 rounded-md text-center">
-                        <p className="text-sm text-gray-500">Errors</p>
-                        <p className="text-2xl font-bold mt-1 text-red-600">{dataEntryStats.error}</p>
+                        <div className="bg-green-50 p-4 rounded-md text-center">
+                          <p className="text-sm text-gray-500">Successful</p>
+                          <p className="text-2xl font-bold mt-1 text-green-600">
+                            {calculationDetails.filter(d => d.total_emissions > 0).length}
+                          </p>
+                        </div>
+                        <div className="bg-orange-50 p-4 rounded-md text-center">
+                          <p className="text-sm text-gray-500">Latest Calculation</p>
+                          <p className="text-lg font-bold mt-1">
+                            {calculationDetails.length > 0 
+                              ? new Date(calculationDetails[0].calculated_at).toLocaleDateString() 
+                              : '-'}
+                          </p>
+                        </div>
                       </div>
                     </div>
                     
-                    <div className="mt-4 flex justify-between">
-                      <Button
-                        variant="outline"
-                        onClick={migrateToDataEntry}
-                        className="flex items-center"
-                      >
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                        Migrate Legacy Data
-                      </Button>
-                      
-                      <Button
-                        variant="outline"
-                        onClick={() => setUiMode("ai")}
-                        className="flex items-center"
-                      >
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Switch to AI-Powered Interface
-                      </Button>
+                    <Accordion type="single" collapsible>
+                      {calculationDetails.map((detail, index) => (
+                        <AccordionItem key={detail.id} value={detail.id}>
+                          <AccordionTrigger className="hover:bg-gray-50 px-3">
+                            <div className="flex flex-1 items-center justify-between pr-2">
+                              <div className="flex items-center">
+                                <div className="mr-4 w-6 text-center">
+                                  {index + 1}.
+                                </div>
+                                <div className="text-left">
+                                  <div className="font-medium">{detail.description}</div>
+                                  <div className="text-sm text-gray-500">
+                                    {detail.category} · {detail.quantity} {detail.unit}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-medium">
+                                  {detail.total_emissions} {detail.emissions_unit}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {new Date(detail.calculated_at).toLocaleString()}
+                                </div>
+                              </div>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="bg-gray-50 px-4 py-3">
+                            <div className="text-xs">
+                              <div className="grid grid-cols-2 gap-2 mb-2">
+                                <div>
+                                  <span className="font-medium">Activity ID:</span>{" "}
+                                  {detail.climatiq_activity_id}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Source:</span>{" "}
+                                  {detail.climatiq_source}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Factor:</span>{" "}
+                                  {detail.climatiq_factor_name}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Region:</span>{" "}
+                                  {detail.climatiq_region || "Global"}
+                                </div>
+                              </div>
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            {dataEntryStats.total > 0 && (
+              <Card className="mt-6">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle>New Data Entry Format</CardTitle>
+                  <Badge variant="outline" className="bg-green-50">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    AI-Ready
+                  </Badge>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-4 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-md text-center">
+                      <p className="text-sm text-gray-500">Total Entries</p>
+                      <p className="text-2xl font-bold mt-1">{dataEntryStats.total}</p>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-          </Tabs>
-        ) : (
-          // AI-Powered UI
-          <AIDataUploadContainer />
+                    <div className="bg-blue-50 p-4 rounded-md text-center">
+                      <p className="text-sm text-gray-500">Processed</p>
+                      <p className="text-2xl font-bold mt-1 text-blue-600">{dataEntryStats.processed}</p>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-md text-center">
+                      <p className="text-sm text-gray-500">Validated</p>
+                      <p className="text-2xl font-bold mt-1 text-green-600">{dataEntryStats.validated}</p>
+                    </div>
+                    <div className="bg-red-50 p-4 rounded-md text-center">
+                      <p className="text-sm text-gray-500">Errors</p>
+                      <p className="text-2xl font-bold mt-1 text-red-600">{dataEntryStats.error}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         )}
       </div>
     </MainLayout>

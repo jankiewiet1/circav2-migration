@@ -239,14 +239,20 @@ export const AIDataUploadContainer: React.FC = () => {
     if (!company || !extractionResponse) return;
     
     try {
+      // Handle case when mappings might be missing from the extraction response
+      const sourceMappings = extractionResponse.mappings || [];
+      
       // Apply user corrections to mappings
       const correctedMappings = AIDataProcessingService.applyUserCorrections(
-        extractionResponse.mappings,
+        sourceMappings,
         Object.entries(userCorrectedMappings).map(([originalHeader, correctedField]) => ({
           originalHeader,
           correctedField: correctedField as any
         }))
       );
+      
+      // Log for debugging
+      console.log("Applying data transformation with mappings:", correctedMappings);
       
       // Transform data with corrected mappings
       const transformedData = AIDataProcessingService.transformExtractedData(
@@ -254,6 +260,8 @@ export const AIDataUploadContainer: React.FC = () => {
         correctedMappings,
         company.id
       );
+      
+      console.log("Transformed data:", transformedData);
       
       // Save all entries at once using createDataEntries
       const { success, count } = await DataEntryService.createDataEntries(transformedData);

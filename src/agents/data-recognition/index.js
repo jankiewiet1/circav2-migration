@@ -2,10 +2,12 @@
  * Carbon Data Recognition Agent Wrapper
  * 
  * This module provides a JavaScript interface to the Python-based
- * Carbon Data Recognition Agent.
+ * Carbon Data Recognition Agent with Model Context Protocol (MCP) support.
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { mcpServer } from '@/lib/mcp-server';
+import { MCPActionType } from '@/types/mcp';
 
 /**
  * Initialize the Carbon Data Recognition Agent
@@ -44,48 +46,77 @@ export function createCarbonDataAgent() {
           
         console.log('File uploaded successfully:', publicUrl);
         
-        // 3. Process the file using the agent via Supabase Edge Function
-        console.log('Calling Edge Function with:', {
-          operation: 'process_file',
-          fileUrl: publicUrl,
-          companyId,
-          agent: true
-        });
-        
-        const { data, error } = await supabase.functions.invoke('process-ai-data', {
-          body: {
-            operation: 'process_file',
-            fileUrl: publicUrl,
-            companyId,
-            agent: true, // Flag to use the agent-based processing
+        // 3. Process the file using MCP action for document extraction
+        try {
+          // First try using the MCP action
+          console.log('Using MCP action to process file');
+          const documentType = this._getDocumentType(file.type);
+          
+          const result = await mcpServer.executeAction(MCPActionType.EXTRACT_DATA_FROM_DOCUMENT, {
+            documentUrl: publicUrl,
+            documentType: documentType,
+            extractionHints: ['carbon', 'emissions', 'energy']
+          });
+          
+          if (result && result.success) {
+            return {
+              success: true,
+              data: result.extractedEntries[0] || {},
+              file_info: { 
+                type: documentType, 
+                filename: file.name 
+              },
+              requires_review: result.unmappedFields.length > 0,
+              missing_fields: result.unmappedFields,
+              warnings: result.warnings,
+              fileUrl: publicUrl,
+              originalFileName: file.name,
+              mcp_processed: true
+            };
           }
-        });
-        
-        if (error) {
-          console.error('Error processing file with agent:', error);
-          throw new Error(`File processing failed: ${error.message}`);
+          
+          // If MCP action fails, fall back to Edge Function
+          console.log('MCP action failed, falling back to Edge Function');
+          throw new Error('MCP action failed');
+        } catch (mcpError) {
+          console.log('Falling back to Edge Function:', mcpError);
+          
+          // Fall back to the original Edge Function method
+          const { data, error } = await supabase.functions.invoke('process-ai-data', {
+            body: {
+              operation: 'process_file',
+              fileUrl: publicUrl,
+              companyId,
+              agent: true, // Flag to use the agent-based processing
+              useMCP: true  // Flag to use MCP if available
+            }
+          });
+          
+          if (error) {
+            console.error('Error processing file with agent:', error);
+            throw new Error(`File processing failed: ${error.message}`);
+          }
+          
+          console.log('Edge Function response:', data);
+          
+          // Check if we have the expected data structure
+          if (!data || !data.data) {
+            console.error('Invalid response structure from Edge Function:', data);
+            throw new Error('Invalid response from the server. Missing data structure.');
+          }
+          
+          // 4. Return the processed data
+          return {
+            success: true,
+            data: data.data.data || data.data, // Handle nested data structure
+            file_info: data.data.file_info || { type: 'unknown', filename: file.name },
+            requires_review: data.data.requires_review || false,
+            missing_fields: data.data.missing_fields || [],
+            warnings: data.data.warnings || [],
+            fileUrl: publicUrl,
+            originalFileName: file.name,
+          };
         }
-        
-        console.log('Edge Function response:', data);
-        
-        // Check if we have the expected data structure
-        if (!data || !data.data) {
-          console.error('Invalid response structure from Edge Function:', data);
-          throw new Error('Invalid response from the server. Missing data structure.');
-        }
-        
-        // 4. Return the processed data
-        return {
-          success: true,
-          data: data.data.data || data.data, // Handle nested data structure
-          file_info: data.data.file_info || { type: 'unknown', filename: file.name },
-          requires_review: data.data.requires_review || false,
-          missing_fields: data.data.missing_fields || [],
-          warnings: data.data.warnings || [],
-          fileUrl: publicUrl,
-          originalFileName: file.name,
-        };
-        
       } catch (error) {
         console.error('Error in Carbon Data Agent:', error);
         return {
@@ -106,13 +137,43 @@ export function createCarbonDataAgent() {
       try {
         console.log('Correcting data:', data);
         
-        // This would typically call an API endpoint to correct the data
-        // using the agent's feedback
+        // Try to use MCP action first
+        try {
+          if (data.dataEntryId) {
+            console.log('Using MCP action to validate data');
+            
+            const validationFields = Object.entries(data).map(([field, value]) => ({
+              field,
+              value,
+              error: field === 'dataEntryId' ? undefined : null
+            }));
+            
+            const result = await mcpServer.executeAction(MCPActionType.VALIDATE_DATA_ENTRY, {
+              dataEntryId: data.dataEntryId,
+              validation: validationFields
+            });
+            
+            if (result && result.valid) {
+              return {
+                success: true,
+                data: { ...data, validated: true },
+              };
+            }
+            
+            // If validation fails, fall back to Edge Function
+            throw new Error('MCP validation failed');
+          }
+        } catch (mcpError) {
+          console.log('Falling back to Edge Function for correction:', mcpError);
+        }
+        
+        // Fall back to Edge Function
         const { data: correctedData, error } = await supabase.functions.invoke('process-ai-data', {
           body: {
             operation: 'correct_data',
             data,
             agent: true,
+            useMCP: true // Flag to use MCP if available
           }
         });
         
@@ -136,6 +197,21 @@ export function createCarbonDataAgent() {
         };
       }
     },
+    
+    /**
+     * Get document type from MIME type
+     * 
+     * @private
+     * @param {string} mimeType - MIME type of the file
+     * @returns {string} Document type for MCP
+     */
+    _getDocumentType(mimeType) {
+      if (mimeType.includes('pdf')) return 'PDF';
+      if (mimeType.includes('excel') || mimeType.includes('spreadsheetml')) return 'EXCEL';
+      if (mimeType.includes('csv')) return 'CSV';
+      if (mimeType.includes('image')) return 'IMAGE';
+      return 'PDF'; // Default to PDF
+    }
   };
 }
 

@@ -138,5 +138,4 @@ The system includes several key services:
 If you need assistance using the AI-powered carbon data agent:
 
 1. Use the built-in chat assistant for context-aware help
-2. Contact support at support@circa.earth
-3. Visit our documentation at https://docs.circa.earth 
+2. Contact support at info@circa.site

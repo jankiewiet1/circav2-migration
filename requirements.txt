@@ -1,4 +1,37 @@
+# AI and Core Dependencies
 openai-agents>=0.0.16
 openai>=1.81.0
 pydantic>=2.10
-python-dotenv>=1.0.0 
+python-dotenv>=1.0.0
+
+# PDF Processing Libraries (Primary)
+pdfplumber>=0.11.0
+pandas>=2.0.0
+pytesseract>=0.3.10
+pillow>=10.0.0
+
+# Additional PDF Processing Tools
+tabula-py>=2.9.0
+camelot-py[cv]>=0.11.0
+
+# Data Processing
+numpy>=1.24.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# File Processing
+openpyxl>=3.1.0
+xlsxwriter>=3.1.0
+
+# HTTP and API
+requests>=2.31.0
+aiohttp>=3.8.0
+
+# Database (if needed for local processing)
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0
+
+# Development and Testing
+pytest>=7.0.0
+black>=23.0.0
+flake8>=6.0.0 

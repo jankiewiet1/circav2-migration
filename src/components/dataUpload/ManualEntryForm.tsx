@@ -13,9 +13,9 @@ import {
 } from "@/components/ui/select";
 import { DataEntryInsert, DataEntrySourceType, GHGCategory } from "@/types/dataEntry";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/CompanyContext";
 import { Loader2 } from "lucide-react";
+import { DataEntryService } from "@/services/dataEntryService";
 
 interface ManualEntryFormProps {
   onEntryCreated?: () => void;
@@ -33,6 +33,10 @@ export const ManualEntryForm: React.FC<ManualEntryFormProps> = ({ onEntryCreated
     quantity: 0,
     unit: '',
     ghg_category: 'Scope 1',
+    supplier_vendor: '',
+    cost: undefined,
+    currency: '',
+    notes: '',
     status: 'raw',
     ai_processed: false
   });
@@ -145,45 +149,34 @@ export const ManualEntryForm: React.FC<ManualEntryFormProps> = ({ onEntryCreated
         throw new Error("Missing company ID");
       }
 
-      // Get scope number from GHG category
-      const scopeNumber = formData.ghg_category === 'Scope 1' ? 1 : 
-                         formData.ghg_category === 'Scope 2' ? 2 : 3;
-      
-      // Format date properly
-      const formattedDate = formData.date ? new Date(formData.date).toISOString().split('T')[0] : 
-                           new Date().toISOString().split('T')[0];
+      // Convert GHG category to correct format for the edge function
+      const ghgCategoryMapping: Record<string, 'scope1' | 'scope2' | 'scope3'> = {
+        'Scope 1': 'scope1',
+        'Scope 2': 'scope2',
+        'Scope 3': 'scope3'
+      };
 
-      // SIMPLIFIED APPROACH: Direct insert with disabled trigger
-      console.log("Using simplified direct insert approach");
-      
-      // Create the entry with match_status to bypass trigger
-      const emissionEntry = {
-        company_id: company.id,
-        date: formattedDate,
-        category: formData.activity_description?.trim() || 'Uncategorized',
-        description: formData.activity_description?.trim() || 'No description',
+      // Prepare data for the edge function
+      const entryData = {
+        activity_description: formData.activity_description?.trim() || '',
         quantity: Number(formData.quantity) || 0,
         unit: formData.unit?.trim() || '',
-        scope: scopeNumber,
-        notes: formData.notes?.trim() || null,
-        match_status: 'pending',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        ghg_category: ghgCategoryMapping[formData.ghg_category as string] || 'scope2',
+        activity_date: formData.date || new Date().toISOString().split('T')[0],
+        supplier_vendor: formData.supplier_vendor?.trim() || undefined,
+        cost: formData.cost ? Number(formData.cost) : undefined,
+        currency: formData.currency && formData.currency.trim() !== '' ? formData.currency.trim() : undefined,
+        notes: formData.notes?.trim()
       };
       
-      // Direct insert into emission_entries table
-      const { data: newEntry, error } = await supabase
-        .from('emission_entries')
-        .insert([emissionEntry])
-        .select()
-        .single();
-        
-      if (error) {
-        console.error("Insert error:", error);
-        throw new Error(`Error saving to emission_entries: ${error.message}`);
-      }
+      console.log("Form data currency:", formData.currency);
+      console.log("Prepared currency for submission:", entryData.currency);
+      console.log("Submitting data to manual-entry function:", entryData);
       
-      console.log("Successfully inserted entry:", newEntry);
+      // Call the manual-entry edge function
+      const result = await DataEntryService.submitManualEntry(entryData);
+      
+      console.log("Function result:", result);
       toast.success("Data entry saved successfully");
       
       // Reset form
@@ -194,6 +187,10 @@ export const ManualEntryForm: React.FC<ManualEntryFormProps> = ({ onEntryCreated
         quantity: 0,
         unit: '',
         ghg_category: 'Scope 1',
+        supplier_vendor: '',
+        cost: undefined,
+        currency: '',
+        notes: '',
         status: 'raw',
         ai_processed: false
       });

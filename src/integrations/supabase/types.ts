@@ -9,47 +9,52 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      leads: {
+      ai_processing_logs: {
         Row: {
-          id: string
-          name: string | null
-          email: string
-          phone: string | null
-          company: string | null
-          calculator_results: Json | null
+          company_id: string
           created_at: string
-          updated_at: string
-          status: string
-          calendly_url: string | null
-          notes: string | null
+          details: Json | null
+          error_message: string | null
+          id: string
+          operation: string
+          processing_time: number | null
+          success: boolean
+          tokens_used: number | null
+          user_id: string | null
         }
         Insert: {
-          id?: string
-          name?: string | null
-          email: string
-          phone?: string | null
-          company?: string | null
-          calculator_results?: Json | null
+          company_id: string
           created_at?: string
-          updated_at?: string
-          status?: string
-          calendly_url?: string | null
-          notes?: string | null
+          details?: Json | null
+          error_message?: string | null
+          id?: string
+          operation: string
+          processing_time?: number | null
+          success?: boolean
+          tokens_used?: number | null
+          user_id?: string | null
         }
         Update: {
-          id?: string
-          name?: string | null
-          email?: string
-          phone?: string | null
-          company?: string | null
-          calculator_results?: Json | null
+          company_id?: string
           created_at?: string
-          updated_at?: string
-          status?: string
-          calendly_url?: string | null
-          notes?: string | null
+          details?: Json | null
+          error_message?: string | null
+          id?: string
+          operation?: string
+          processing_time?: number | null
+          success?: boolean
+          tokens_used?: number | null
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_processing_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       companies: {
         Row: {
@@ -249,74 +254,190 @@ export type Database = {
           },
         ]
       }
-      emission_calc_climatiq: {
+      content_translations: {
         Row: {
-          id: string
-          company_id: string
-          entry_id: string
-          calculated_at: string | null
-          total_emissions: number | null
-          emissions_unit: string | null
-          scope: string | null
-          climatiq_activity_id: string | null
-          climatiq_emissions_factor_id: string | null
-          climatiq_factor_name: string | null
-          climatiq_region: string | null
-          climatiq_category: string | null
-          climatiq_source: string | null
-          climatiq_year: number | null
-          co2_emissions: number | null
-          ch4_emissions: number | null
-          n2o_emissions: number | null
-          activity_data: any | null
-          request_params: any | null
+          content_type: string
           created_at: string | null
+          de_text: string | null
+          en_text: string
+          id: string
+          key: string
+          nl_text: string | null
           updated_at: string | null
         }
         Insert: {
-          id?: string
-          company_id: string
-          entry_id: string
-          calculated_at?: string | null
-          total_emissions?: number | null
-          emissions_unit?: string | null
-          scope?: string | null
-          climatiq_activity_id?: string | null
-          climatiq_emissions_factor_id?: string | null
-          climatiq_factor_name?: string | null
-          climatiq_region?: string | null
-          climatiq_category?: string | null
-          climatiq_source?: string | null
-          climatiq_year?: number | null
-          co2_emissions?: number | null
-          ch4_emissions?: number | null
-          n2o_emissions?: number | null
-          activity_data?: any | null
-          request_params?: any | null
+          content_type: string
           created_at?: string | null
+          de_text?: string | null
+          en_text: string
+          id?: string
+          key: string
+          nl_text?: string | null
           updated_at?: string | null
         }
         Update: {
+          content_type?: string
+          created_at?: string | null
+          de_text?: string | null
+          en_text?: string
           id?: string
+          key?: string
+          nl_text?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      data_entry: {
+        Row: {
+          activity_description: string
+          ai_confidence: number | null
+          ai_notes: string | null
+          ai_processed: boolean | null
+          company_id: string
+          cost: number | null
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          custom_tags: Json | null
+          date: string
+          emission_factor_reference: string | null
+          ghg_category: string
+          id: string
+          notes: string | null
+          original_file_reference: string | null
+          quantity: number
+          source_type: string
+          status: string
+          supplier_vendor: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          activity_description: string
+          ai_confidence?: number | null
+          ai_notes?: string | null
+          ai_processed?: boolean | null
+          company_id: string
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          custom_tags?: Json | null
+          date: string
+          emission_factor_reference?: string | null
+          ghg_category: string
+          id?: string
+          notes?: string | null
+          original_file_reference?: string | null
+          quantity: number
+          source_type: string
+          status?: string
+          supplier_vendor?: string | null
+          unit: string
+          updated_at?: string
+        }
+        Update: {
+          activity_description?: string
+          ai_confidence?: number | null
+          ai_notes?: string | null
+          ai_processed?: boolean | null
           company_id?: string
-          entry_id?: string
-          calculated_at?: string | null
-          total_emissions?: number | null
-          emissions_unit?: string | null
-          scope?: string | null
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          custom_tags?: Json | null
+          date?: string
+          emission_factor_reference?: string | null
+          ghg_category?: string
+          id?: string
+          notes?: string | null
+          original_file_reference?: string | null
+          quantity?: number
+          source_type?: string
+          status?: string
+          supplier_vendor?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_entry_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      emission_calc_climatiq: {
+        Row: {
+          activity_data: Json | null
+          calculated_at: string
+          ch4_emissions: number | null
+          climatiq_activity_id: string | null
+          climatiq_category: string | null
+          climatiq_emissions_factor_id: string | null
+          climatiq_factor_name: string | null
+          climatiq_region: string | null
+          climatiq_source: string | null
+          climatiq_year: number | null
+          co2_emissions: number | null
+          company_id: string
+          created_at: string
+          emissions_unit: string
+          entry_id: string | null
+          id: string
+          n2o_emissions: number | null
+          request_params: Json | null
+          scope: number | null
+          total_emissions: number
+          updated_at: string | null
+        }
+        Insert: {
+          activity_data?: Json | null
+          calculated_at?: string
+          ch4_emissions?: number | null
           climatiq_activity_id?: string | null
+          climatiq_category?: string | null
           climatiq_emissions_factor_id?: string | null
           climatiq_factor_name?: string | null
           climatiq_region?: string | null
-          climatiq_category?: string | null
           climatiq_source?: string | null
           climatiq_year?: number | null
           co2_emissions?: number | null
-          ch4_emissions?: number | null
+          company_id: string
+          created_at?: string
+          emissions_unit?: string
+          entry_id?: string | null
+          id?: string
           n2o_emissions?: number | null
-          activity_data?: any | null
-          request_params?: any | null
-          created_at?: string | null
+          request_params?: Json | null
+          scope?: number | null
+          total_emissions: number
+          updated_at?: string | null
+        }
+        Update: {
+          activity_data?: Json | null
+          calculated_at?: string
+          ch4_emissions?: number | null
+          climatiq_activity_id?: string | null
+          climatiq_category?: string | null
+          climatiq_emissions_factor_id?: string | null
+          climatiq_factor_name?: string | null
+          climatiq_region?: string | null
+          climatiq_source?: string | null
+          climatiq_year?: number | null
+          co2_emissions?: number | null
+          company_id?: string
+          created_at?: string
+          emissions_unit?: string
+          entry_id?: string | null
+          id?: string
+          n2o_emissions?: number | null
+          request_params?: Json | null
+          scope?: number | null
+          total_emissions?: number
           updated_at?: string | null
         }
         Relationships: [
@@ -329,6 +450,99 @@ export type Database = {
           },
           {
             foreignKeyName: "emission_calc_climatiq_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "emission_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      emission_calculations_legacy: {
+        Row: {
+          calculated_at: string | null
+          ch4_emissions: number | null
+          ch4_factor: number | null
+          co2_emissions: number | null
+          co2_factor: number | null
+          company_id: string
+          date: string | null
+          emission_factor_id: number | null
+          entry_id: string
+          id: string
+          matched_category_1: string | null
+          matched_category_2: string | null
+          matched_category_3: string | null
+          matched_category_4: string | null
+          matched_factor_id: string | null
+          matched_ghg_unit: string | null
+          matched_similarity: number | null
+          matched_uom: string | null
+          n2o_emissions: number | null
+          n2o_factor: number | null
+          source: string | null
+          status: Database["public"]["Enums"]["calculation_status"]
+          total_emissions: number | null
+        }
+        Insert: {
+          calculated_at?: string | null
+          ch4_emissions?: number | null
+          ch4_factor?: number | null
+          co2_emissions?: number | null
+          co2_factor?: number | null
+          company_id: string
+          date?: string | null
+          emission_factor_id?: number | null
+          entry_id: string
+          id?: string
+          matched_category_1?: string | null
+          matched_category_2?: string | null
+          matched_category_3?: string | null
+          matched_category_4?: string | null
+          matched_factor_id?: string | null
+          matched_ghg_unit?: string | null
+          matched_similarity?: number | null
+          matched_uom?: string | null
+          n2o_emissions?: number | null
+          n2o_factor?: number | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["calculation_status"]
+          total_emissions?: number | null
+        }
+        Update: {
+          calculated_at?: string | null
+          ch4_emissions?: number | null
+          ch4_factor?: number | null
+          co2_emissions?: number | null
+          co2_factor?: number | null
+          company_id?: string
+          date?: string | null
+          emission_factor_id?: number | null
+          entry_id?: string
+          id?: string
+          matched_category_1?: string | null
+          matched_category_2?: string | null
+          matched_category_3?: string | null
+          matched_category_4?: string | null
+          matched_factor_id?: string | null
+          matched_ghg_unit?: string | null
+          matched_similarity?: number | null
+          matched_uom?: string | null
+          n2o_emissions?: number | null
+          n2o_factor?: number | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["calculation_status"]
+          total_emissions?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emission_calculations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emission_calculations_entry_id_fkey"
             columns: ["entry_id"]
             isOneToOne: true
             referencedRelation: "emission_entries"
@@ -398,7 +612,7 @@ export type Database = {
           },
         ]
       }
-      emission_factors: {
+      emission_factors_legacy: {
         Row: {
           category_1: string | null
           category_2: string | null
@@ -440,36 +654,180 @@ export type Database = {
         }
         Relationships: []
       }
+      leads: {
+        Row: {
+          additional_comments: string | null
+          calculator_results: Json | null
+          calendly_url: string | null
+          company: string | null
+          company_address: string | null
+          company_fte: string | null
+          company_name: string | null
+          company_size: string | null
+          created_at: string | null
+          email: string
+          esg_reporting_hours: number | null
+          first_name: string | null
+          id: string
+          industry: string | null
+          kvk_number: string | null
+          last_name: string | null
+          motivations: string[] | null
+          name: string | null
+          notes: string | null
+          phone: string | null
+          platform_value_perception: number | null
+          reduction_target: string | null
+          reduction_year: string | null
+          status: string | null
+          target_emissions: number | null
+          updated_at: string | null
+          used_co2_calculator: boolean | null
+          website: string | null
+        }
+        Insert: {
+          additional_comments?: string | null
+          calculator_results?: Json | null
+          calendly_url?: string | null
+          company?: string | null
+          company_address?: string | null
+          company_fte?: string | null
+          company_name?: string | null
+          company_size?: string | null
+          created_at?: string | null
+          email: string
+          esg_reporting_hours?: number | null
+          first_name?: string | null
+          id?: string
+          industry?: string | null
+          kvk_number?: string | null
+          last_name?: string | null
+          motivations?: string[] | null
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          platform_value_perception?: number | null
+          reduction_target?: string | null
+          reduction_year?: string | null
+          status?: string | null
+          target_emissions?: number | null
+          updated_at?: string | null
+          used_co2_calculator?: boolean | null
+          website?: string | null
+        }
+        Update: {
+          additional_comments?: string | null
+          calculator_results?: Json | null
+          calendly_url?: string | null
+          company?: string | null
+          company_address?: string | null
+          company_fte?: string | null
+          company_name?: string | null
+          company_size?: string | null
+          created_at?: string | null
+          email?: string
+          esg_reporting_hours?: number | null
+          first_name?: string | null
+          id?: string
+          industry?: string | null
+          kvk_number?: string | null
+          last_name?: string | null
+          motivations?: string[] | null
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          platform_value_perception?: number | null
+          reduction_target?: string | null
+          reduction_year?: string | null
+          status?: string | null
+          target_emissions?: number | null
+          updated_at?: string | null
+          used_co2_calculator?: boolean | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          data: Json | null
+          id: string
+          message: string
+          read: boolean
+          title: string
+          type: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          message: string
+          read?: boolean
+          title: string
+          type: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          message?: string
+          read?: boolean
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          company_name: string | null
+          company_size: string | null
           created_at: string | null
           department: string | null
           email: string | null
           first_name: string | null
           id: string
+          industry: string | null
           job_title: string | null
+          kvk_number: string | null
           last_name: string | null
           phone_number: string | null
+          website: string | null
         }
         Insert: {
+          company_name?: string | null
+          company_size?: string | null
           created_at?: string | null
           department?: string | null
           email?: string | null
           first_name?: string | null
           id: string
+          industry?: string | null
           job_title?: string | null
+          kvk_number?: string | null
           last_name?: string | null
           phone_number?: string | null
+          website?: string | null
         }
         Update: {
+          company_name?: string | null
+          company_size?: string | null
           created_at?: string | null
           department?: string | null
           email?: string | null
           first_name?: string | null
           id?: string
+          industry?: string | null
           job_title?: string | null
+          kvk_number?: string | null
           last_name?: string | null
           phone_number?: string | null
+          website?: string | null
         }
         Relationships: []
       }
@@ -530,27 +888,6 @@ export type Database = {
         }
         Relationships: []
       }
-      unit_conversions: {
-        Row: {
-          category: string
-          multiplier: number
-          standard_unit: string
-          unit_from: string
-        }
-        Insert: {
-          category: string
-          multiplier: number
-          standard_unit: string
-          unit_from: string
-        }
-        Update: {
-          category?: string
-          multiplier?: number
-          standard_unit?: string
-          unit_from?: string
-        }
-        Relationships: []
-      }
       user_notification_settings: {
         Row: {
           created_at: string
@@ -572,8 +909,112 @@ export type Database = {
         }
         Relationships: []
       }
+      waitlist: {
+        Row: {
+          company_address: string
+          company_name: string
+          company_size: string
+          company_website: string | null
+          created_at: string
+          email: string
+          first_name: string
+          goals: Json
+          id: string
+          industry: string
+          last_name: string
+          notes: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          company_address: string
+          company_name: string
+          company_size: string
+          company_website?: string | null
+          created_at?: string
+          email: string
+          first_name: string
+          goals: Json
+          id?: string
+          industry: string
+          last_name: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          company_address?: string
+          company_name?: string
+          company_size?: string
+          company_website?: string | null
+          created_at?: string
+          email?: string
+          first_name?: string
+          goals?: Json
+          id?: string
+          industry?: string
+          last_name?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
+      data_entry_with_emissions: {
+        Row: {
+          activity_description: string | null
+          ai_confidence: number | null
+          ai_notes: string | null
+          ai_processed: boolean | null
+          climatiq_activity_id: string | null
+          climatiq_factor_name: string | null
+          climatiq_source: string | null
+          company_id: string | null
+          cost: number | null
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          custom_tags: Json | null
+          date: string | null
+          emission_factor_reference: string | null
+          emissions_unit: string | null
+          ghg_category: string | null
+          id: string | null
+          notes: string | null
+          original_file_reference: string | null
+          quantity: number | null
+          source_type: string | null
+          status: string | null
+          supplier_vendor: string | null
+          total_emissions: number | null
+          unit: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_entry_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      view_emissions_by_scope: {
+        Row: {
+          company_name: string | null
+          emissions_unit: string | null
+          month: string | null
+          scope: number | null
+          total_emissions: number | null
+        }
+        Relationships: []
+      }
       view_entries_by_year_and_scope: {
         Row: {
           company_id: string | null
@@ -614,9 +1055,9 @@ export type Database = {
         Args: { "": string } | { "": unknown }
         Returns: unknown
       }
-      calculate_emissions_for_entry: {
-        Args: { p_entry_id: string }
-        Returns: undefined
+      calculate_emissions_climatiq: {
+        Args: { entry_id: string }
+        Returns: Json
       }
       calculate_ghg_emissions: {
         Args: { _company_id: string }
@@ -667,14 +1108,23 @@ export type Database = {
       get_entries_without_calculations: {
         Args:
           | { batch_limit: number }
-          | { batch_limit: number; p_cursor?: string }
+          | { batch_limit?: number; cursor_id?: string }
         Returns: {
-          id: string
+          category: string
           company_id: string
+          created_at: string
           date: string
+          description: string
+          embedding: string | null
+          id: string
+          match_status: string | null
+          notes: string | null
           quantity: number
+          scope: number | null
           unit: string
-          embedding: string
+          updated_at: string
+          upload_session_id: string | null
+          year: number | null
         }[]
       }
       halfvec_avg: {
@@ -709,6 +1159,19 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      insert_emission_entry: {
+        Args: {
+          p_company_id: string
+          p_date: string
+          p_category: string
+          p_description: string
+          p_quantity: number
+          p_unit: string
+          p_scope: number
+          p_notes: string
+        }
+        Returns: string
+      }
       ivfflat_bit_support: {
         Args: { "": unknown }
         Returns: unknown
@@ -728,6 +1191,18 @@ export type Database = {
       l2_normalize: {
         Args: { "": string } | { "": unknown } | { "": unknown }
         Returns: string
+      }
+      manual_entry_function: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      mark_all_notifications_read: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      mark_notification_read: {
+        Args: { notification_id: string }
+        Returns: undefined
       }
       match_categories: {
         Args: {
@@ -776,6 +1251,13 @@ export type Database = {
           similarity: number
         }[]
       }
+      migrate_emission_entries_to_data_entry: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          migrated_count: number
+          message: string
+        }[]
+      }
       normalize_unit: {
         Args: { raw_value: number; raw_unit: string }
         Returns: {
@@ -784,10 +1266,6 @@ export type Database = {
         }[]
       }
       process_all_emission_entries: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      process_emission_entries_batch: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
