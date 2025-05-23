@@ -181,6 +181,25 @@ export interface EmissionCalculationResult {
   };
 }
 
+// Define the emission entry type
+interface EmissionEntry {
+  id: string;
+  company_id: string;
+  date: string;
+  category: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  scope: number;
+  notes?: string | null;
+  match_status?: string | null;
+  embedding?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  upload_session_id?: string | null;
+  year?: number | null;
+}
+
 /**
  * Handle Climatiq API-based emission calculations
  */
@@ -649,6 +668,121 @@ export const calculateDynamicEmissions = async (companyId: string, entryIds?: st
       calculated: 0,
       results: [],
       message: error instanceof Error ? error.message : 'Unknown error occurred'
+    };
+  }
+};
+
+/**
+ * Process a single emission entry
+ * This function will be used as a workaround for the missing database function
+ * @param entryId The UUID of the emission entry to process
+ */
+export const processSingleEmissionEntry = async (entryId: string): Promise<{
+  success: boolean;
+  message: string;
+  result?: any;
+}> => {
+  try {
+    // 1. Fetch the entry
+    const { data: entry, error: entryError } = await supabase
+      .from('emission_entries')
+      .select('*')
+      .eq('id', entryId)
+      .single();
+
+    if (entryError) {
+      return {
+        success: false,
+        message: `Error fetching entry: ${entryError.message}`
+      };
+    }
+
+    if (!entry) {
+      return {
+        success: false,
+        message: 'Entry not found'
+      };
+    }
+
+    // Typecast the entry to ensure type safety
+    const typedEntry = entry as EmissionEntry;
+
+    // 2. Calculate emissions based on simple category matching
+    // This is a simplified version of what would happen in the database function
+    const { data: factors, error: factorsError } = await supabase
+      .from('emission_factors')
+      .select('*')
+      .eq('category_1', typedEntry.category)
+      .order('id', { ascending: false })
+      .limit(1);
+
+    if (factorsError) {
+      return {
+        success: false,
+        message: `Error fetching emission factors: ${factorsError.message}`
+      };
+    }
+
+    // 3. Update the entry status
+    let matchStatus = 'pending';
+    let result = null;
+    
+    if (factors && factors.length > 0) {
+      const factor = factors[0];
+      const conversionFactor = factor['GHG Conversion Factor'] || 1;
+      const totalEmissions = typedEntry.quantity * conversionFactor;
+      
+      // Create calculation record
+      const { data: calcData, error: calcError } = await supabase
+        .from('emission_calc_climatiq')
+        .insert({
+          company_id: typedEntry.company_id,
+          entry_id: typedEntry.id,
+          total_emissions: totalEmissions,
+          emissions_unit: 'kg CO2e',
+          climatiq_activity_id: factor.category_1,
+          climatiq_factor_name: `${factor.category_1} - ${factor.category_2 || ''} - ${factor.category_3 || ''}`,
+          climatiq_source: factor.Source || 'DEFRA',
+          climatiq_year: new Date().getFullYear(),
+          calculated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+        
+      if (calcError) {
+        console.error('Error creating calculation record:', calcError);
+      } else {
+        result = calcData;
+        matchStatus = 'matched';
+      }
+    } else {
+      matchStatus = 'factor_not_found';
+    }
+    
+    // Update the entry status
+    const { error: updateError } = await supabase
+      .from('emission_entries')
+      .update({ match_status: matchStatus })
+      .eq('id', typedEntry.id);
+      
+    if (updateError) {
+      return {
+        success: false,
+        message: `Error updating entry status: ${updateError.message}`
+      };
+    }
+    
+    return {
+      success: true,
+      message: `Entry processed with status: ${matchStatus}`,
+      result
+    };
+    
+  } catch (error) {
+    console.error('Error in processSingleEmissionEntry:', error);
+    return {
+      success: false,
+      message: `Unexpected error: ${error?.message || String(error)}`
     };
   }
 };
