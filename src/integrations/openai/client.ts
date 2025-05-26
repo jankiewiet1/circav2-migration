@@ -1,12 +1,12 @@
 import OpenAI from 'openai';
-import { OPENAI_API_KEY as LOCAL_API_KEY } from './config.local';
 import { MCPContext, MCPActionType, MCPActionInputs, MCPActionOutputs } from '@/types/mcp';
 
-// Get API key from environment variables with proper fallbacks
+// Get API key from environment variables
+// In development, set VITE_OPENAI_API_KEY in your .env.local file
+// In production, set OPENAI_API_KEY in your deployment environment
 const OPENAI_API_KEY = 
   import.meta.env.VITE_OPENAI_API_KEY || 
   import.meta.env.OPENAI_API_KEY || 
-  LOCAL_API_KEY ||
   '';
 
 // Check if key is valid (handle both traditional and project-scoped keys)
@@ -33,7 +33,7 @@ console.log('OpenAI Client Config:', {
 // Check if API key is valid
 if (!isValidKey(OPENAI_API_KEY)) {
   console.warn('OpenAI API key is missing or invalid. AI features will not work properly.');
-  console.warn('Please set a valid VITE_OPENAI_API_KEY in your .env.local file or update config.local.ts');
+  console.warn('Please set VITE_OPENAI_API_KEY in your environment variables or .env.local file');
 }
 
 export const isConfigured = isValidKey(OPENAI_API_KEY);
