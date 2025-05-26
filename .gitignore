@@ -5,3 +5,48 @@ dist/
 build/
 .vercel
 src/integrations/openai/config.local.ts
+
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+.env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.temp/
+
+# Build artifacts
+*.tsbuildinfo
+.next/
+.nuxt/
+.output/
+.cache/
