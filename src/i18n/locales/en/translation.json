@@ -1,0 +1,283 @@
+{
+  "common": {
+    "login": "Log In",
+    "signup": "Sign Up",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "emailRequired": "Email is required",
+    "passwordRequired": "Password is required",
+    "step": "Step {{current}} of {{total}}",
+    "allRightsReserved": "All Rights Reserved",
+    "chat": "Chat with us",
+    "yes": "Yes, please",
+    "no": "No, thanks"
+  },
+  "login": {
+    "pageTitle": "Log In",
+    "pageDescription": "Log in to your Circa account to manage your carbon emissions",
+    "title": "Welcome Back",
+    "subtitle": "Log in to your account to continue",
+    "welcomeBack": "Welcome back",
+    "enterCredentials": "Enter your credentials to access your dashboard",
+    "forgotPassword": "Forgot password?",
+    "rememberMe": "Remember me",
+    "signIn": "Sign In",
+    "noAccount": "Don't have an account?"
+  },
+  "nav": {
+    "howItWorks": "How It Works",
+    "whyCirca": "Why Circa",
+    "features": "Features",
+    "testimonials": "Testimonials",
+    "pricing": "Pricing",
+    "languageSelector": "Change Language",
+    "blog": "Blog",
+    "contact": "Contact",
+    "calculator": "CO₂ Calculator",
+    "showcase": "Circa in Action"
+  },
+  "hero": {
+    "title": {
+      "highlight": "Automate",
+      "your": "Your",
+      "carbon": "Carbon Accounting"
+    },
+    "subtitle": "Streamline your sustainability reporting and save time by automating your carbon accounting process.",
+    "cta": {
+      "primary": "Start making an impact",
+      "secondary": "Free Carbon Calculator"
+    },
+    "noCreditCard": "No credit card required",
+    "trustedBy": "Trusted by 500+ companies",
+    "ratingSource": "Capterra"
+  },
+  "badges": {
+    "cdpReady": "CDP Ready",
+    "ghgProtocol": "GHG Protocol",
+    "iso14064": "ISO 14064",
+    "auditFriendly": "Audit Friendly",
+    "cdpShort": "CDP",
+    "ghgShort": "GHG",
+    "isoShort": "ISO"
+  },
+  "howItWorks": {
+    "title": "How It Works",
+    "subtitle": "Our streamlined process makes carbon accounting simple and intuitive",
+    "cta": "Upload Your Data Now",
+    "steps": {
+      "upload": {
+        "title": "Upload Your Data",
+        "description": "Easily import data from spreadsheets, invoices, and connected systems"
+      },
+      "match": {
+        "title": "Automated Matching",
+        "description": "AI-powered classification and emission factor assignment"
+      },
+      "insights": {
+        "title": "Get Insights",
+        "description": "Visualize your carbon footprint across all emission scopes"
+      },
+      "reports": {
+        "title": "Generate Reports",
+        "description": "Export audit-ready reports for any disclosure framework"
+      }
+    }
+  },
+  "showcase": {
+    "title": "See Circa in Action",
+    "subtitle": "Powerful features designed for carbon management excellence",
+    "cta": "See Your Impact Live"
+  },
+  "productShowcase": {
+    "dashboard": {
+      "title": "Dashboard Overview",
+      "description": "Complete visibility of your carbon footprint"
+    },
+    "emissions": {
+      "title": "Emissions Analytics",
+      "description": "Detailed breakdown of your emissions data"
+    },
+    "reports": {
+      "title": "Report Generation",
+      "description": "Automated reporting for all frameworks"
+    }
+  },
+  "whyCirca": {
+    "title": "Why Circa",
+    "subtitle": "Trusted by organizations of all sizes to simplify their carbon accounting journey",
+    "benefit1Title": "Compliance Made Easy",
+    "benefit1Description": "Meet regulatory requirements and stakeholder demands with accurate, auditable carbon reporting.",
+    "benefit2Title": "Actionable Insights",
+    "benefit2Description": "Transform raw emissions data into strategic decisions with our intelligent analytics platform.",
+    "benefit3Title": "Team Collaboration",
+    "benefit3Description": "Engage your entire organization in your sustainability journey with intuitive collaboration tools."
+  },
+  "features": {
+    "title": "Features",
+    "subtitle": "Everything you need to measure, manage, and reduce your carbon footprint",
+    "feature1Title": "Data Collection",
+    "feature1Description": "Simple data uploads with automated validation and matching.",
+    "feature2Title": "Emissions Dashboard",
+    "feature2Description": "Track emissions across scopes with real-time visualization.",
+    "feature3Title": "Custom Reporting",
+    "feature3Description": "Generate reports tailored to various regulatory frameworks.",
+    "feature4Title": "Reduction Planning",
+    "feature4Description": "Set targets and track progress with actionable recommendations.",
+    "cta": "Get Started for Free"
+  },
+  "finalCta": {
+    "title": "Ready to Simplify Your Carbon Accounting?",
+    "subtitle": "Join hundreds of companies using Circa to measure, manage, and reduce their carbon footprint.",
+    "button": "Sign Up Now"
+  },
+  "footer": {
+    "tagline": "Simplifying carbon accounting for businesses of all sizes.",
+    "copyright": "Circa. All rights reserved."
+  },
+  "stats": {
+    "timeSaved": {
+      "value": "80%",
+      "label": "Time Saved",
+      "description": "Automate data collection and calculations that used to take weeks"
+    },
+    "annualSavings": {
+      "value": "€50K+",
+      "label": "Annual Savings",
+      "description": "Average cost savings compared to traditional consulting services"
+    },
+    "auditReady": {
+      "value": "100%",
+      "label": "Audit Ready",
+      "description": "Compliant reports with full data traceability and verification"
+    }
+  },
+  "calculator": {
+    "title": "CO₂ Calculator",
+    "subtitle": "Fill in your consumption and receive a summary by email. Try it now!",
+    "electricity": "Electricity",
+    "heating": "Heating",
+    "businessTransport": "Business Transport",
+    "flights": "Flights",
+    "companyInfo": "Company Info",
+    "summary": "Summary",
+    "factor": "Factor",
+    "co2emissions": "CO₂ emissions",
+    "socialCost": "Social cost",
+    "companyName": "Company name",
+    "companyAddress": "Company address",
+    "employees": "Number of employees (FTE)",
+    "grayElectricity": "Gray electricity (NL average)",
+    "greenElectricity": "Green electricity from abroad",
+    "dutchWindSolar": "Green electricity (Dutch wind and solar)",
+    "biomassElectricity": "Electricity from biomass",
+    "districtHeating": "District heating (CCGT)",
+    "naturalGas": "Natural gas",
+    "heatingOil": "Heating oil",
+    "geothermal": "Geothermal",
+    "propane": "Propane",
+    "biogas": "Biogas (average)",
+    "diesel": "Diesel",
+    "petrol": "Petrol",
+    "lpg": "LPG",
+    "cng": "CNG (natural gas)",
+    "electricGreen": "Electric (with green power)",
+    "electricGray": "Electric (with gray power)",
+    "train": "Train (green power)",
+    "bus": "Bus",
+    "metroTram": "Metro/Tram (green power)",
+    "hydrogenGray": "Hydrogen gray",
+    "shortHaulFlight": "Flight -2,500 km",
+    "longHaulFlight": "Flight 2,500+ km",
+    "reductionTarget": {
+      "title": "CO₂ Reduction Target",
+      "percentage": "Target reduction percentage",
+      "year": "Target year",
+      "current": "Current emissions",
+      "target": "Target emissions",
+      "required": "Required reduction"
+    },
+    "emissionsOverview": "Emissions Overview",
+    "totalEmissions": "Total emissions",
+    "totalSocialCost": "Total social cost",
+    "emissionsPerFTE": "Emissions per FTE",
+    "emailReport": "Email for detailed report",
+    "sendReport": "Send detailed report by email",
+    "thankYou": "Thank you! You will receive a detailed report by email shortly.",
+    "pleaseEnterValue": "Please enter a value to calculate your carbon footprint.",
+    "recommendations": "Recommendations",
+    "recommendationSubtitle": "Based on your data, here are some suggestions to reduce your carbon footprint:",
+    "emissionFactorSource": "Source: Climate databases, verified 2024"
+  },
+  "impact": {
+    "high": "High Impact",
+    "medium": "Medium Impact",
+    "low": "Low Impact"
+  },
+  "effort": {
+    "high": "High Effort",
+    "medium": "Medium Effort",
+    "low": "Low Effort"
+  },
+  "savings": "Savings: {{value}}",
+  "tips": {
+    "electricity": {
+      "switchto100renewableenergy": "Switch to 100% Renewable Energy",
+      "switchto100renewableenergy.description": "Change to a provider offering certified green electricity from Dutch wind or solar sources.",
+      "installlighting": "Install LED Lighting",
+      "installlighting.description": "Replace all conventional lighting with LED alternatives throughout your office.",
+      "smartbuildingcontrols": "Smart Building Controls",
+      "smartbuildingcontrols.description": "Install motion sensors and smart thermostats to reduce energy waste.",
+      "solarpanelinstallation": "Solar Panel Installation",
+      "solarpanelinstallation.description": "Install solar panels on your office roof to generate your own renewable electricity."
+    },
+    "heating": {
+      "buildinginsulation": "Building Insulation",
+      "buildinginsulation.description": "Improve wall, roof, and window insulation to reduce heat loss.",
+      "heatpumpinstallation": "Heat Pump Installation",
+      "heatpumpinstallation.description": "Replace fossil fuel heating systems with electric heat pumps.",
+      "switchtobiogas": "Switch to Biogas",
+      "switchtobiogas.description": "If heat pumps aren't viable, consider switching to certified biogas.",
+      "lowerthermostat": "Lower Thermostat Setting",
+      "lowerthermostat.description": "Reduce office temperature by 1-2°C during working hours."
+    },
+    "businessTransport": {
+      "electricvehiclefleet": "Electric Vehicle Fleet",
+      "electricvehiclefleet.description": "Replace company cars with electric vehicles charged with renewable energy.",
+      "remoteworkpolicy": "Remote Work Policy",
+      "remoteworkpolicy.description": "Implement a structured remote work policy to reduce commuting.",
+      "companybikingprogram": "Company Biking Program",
+      "companybikingprogram.description": "Provide company bikes or e-bikes for local trips and commuting.",
+      "greencommutingincentives": "Green Commuting Incentives",
+      "greencommutingincentives.description": "Offer financial incentives for employees using public transport."
+    },
+    "flights": {
+      "virtualmeetingpolicy": "Virtual Meeting Policy",
+      "virtualmeetingpolicy.description": "Implement a policy requiring virtual alternatives before approving flights.",
+      "traintravelforshortdistances": "Train Travel for Short Distances",
+      "traintravelforshortdistances.description": "Mandate train travel for trips under 700km when possible.",
+      "combinetrips": "Combine Trips",
+      "combinetrips.description": "Plan multiple meetings in the same region for a single trip.",
+      "highqualitycarbonoffsetting": "High Quality Carbon Offsetting",
+      "highqualitycarbonoffsetting.description": "Invest in Gold Standard carbon offsets for unavoidable flights."
+    }
+  },
+  "alt": {
+    "userPhoto": "User",
+    "dashboardImage": "Circa Dashboard"
+  },
+  "registration": {
+    "successTitle": "Registration Successful!",
+    "successDescription": "Thank you for joining Circa! Please check your email to verify your account."
+  },
+  "chat": {
+    "welcome": "Welcome to Circa! How can we help you?",
+    "bookQuestion": "Would you like to schedule a demo or consultation with our team?",
+    "noBooking": "No problem! If you have questions about our services, you can reach us at info@circa.site.",
+    "assistMessage": "Our team is ready to help you.",
+    "contactInfo": "Email: info@circa.site"
+  }
+} 

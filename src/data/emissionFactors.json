@@ -1,0 +1,44 @@
+[
+  {
+    "category": "Elektriciteit",
+    "options": [
+      { "label": "Grijze stroom (NL gemiddeld)", "unit": "kWh", "factor": 0.536, "source": "klimaatplein.nl, 2024" },
+      { "label": "Groene stroom uit buitenland", "unit": "kWh", "factor": 0.456, "source": "klimaatplein.nl, 2024" },
+      { "label": "Groene stroom (Nederlandse wind en zon)", "unit": "kWh", "factor": 0.0, "source": "klimaatplein.nl, 2024" },
+      { "label": "Stroom uit biomassa", "unit": "kWh", "factor": 0.071, "source": "klimaatplein.nl, 2024" }
+    ]
+  },
+  {
+    "category": "Verwarming",
+    "options": [
+      { "label": "Stadsverwarming (STEG)", "unit": "GJ", "factor": 23.37, "source": "klimaatplein.nl, 2024" },
+      { "label": "Aardgas", "unit": "m3", "factor": 2.134, "source": "klimaatplein.nl, 2024" },
+      { "label": "Stookolie", "unit": "Liters", "factor": 3.468, "source": "klimaatplein.nl, 2024" },
+      { "label": "Geothermie", "unit": "GJ", "factor": 25.82, "source": "klimaatplein.nl, 2024" },
+      { "label": "Propaan", "unit": "Liters", "factor": 1.725, "source": "klimaatplein.nl, 2024" },
+      { "label": "Groengas (gemiddeld)", "unit": "m3", "factor": 0.723, "source": "klimaatplein.nl, 2024" }
+    ]
+  },
+  {
+    "category": "Zakelijk vervoer",
+    "options": [
+      { "label": "Diesel", "unit": "Liters", "factor": 3.256, "source": "klimaatplein.nl, 2024" },
+      { "label": "Benzine", "unit": "Liters", "factor": 2.821, "source": "klimaatplein.nl, 2024" },
+      { "label": "LPG", "unit": "Liters", "factor": 1.802, "source": "klimaatplein.nl, 2024" },
+      { "label": "CNG (aardgas)", "unit": "Kg", "factor": 2.608, "source": "klimaatplein.nl, 2024" },
+      { "label": "Elektrisch (met groene stroom)", "unit": "Km", "factor": 0.003, "source": "klimaatplein.nl, 2024" },
+      { "label": "Elektrisch (met grijze stroom)", "unit": "Km", "factor": 0.109, "source": "klimaatplein.nl, 2024" },
+      { "label": "Trein (groene stroom)", "unit": "Km", "factor": 0.0, "source": "klimaatplein.nl, 2024" },
+      { "label": "Bus", "unit": "Km", "factor": 0.109, "source": "klimaatplein.nl, 2024" },
+      { "label": "Metro/Tram (groene stroom)", "unit": "Km", "factor": 0.0, "source": "klimaatplein.nl, 2024" },
+      { "label": "Waterstof grijs", "unit": "Km", "factor": 0.112, "source": "klimaatplein.nl, 2024" }
+    ]
+  },
+  {
+    "category": "Vliegreizen",
+    "options": [
+      { "label": "Vliegreis -2.500 km", "unit": "Km", "factor": 0.203, "source": "klimaatplein.nl, 2024" },
+      { "label": "Vliegreis 2.500+ km", "unit": "Km", "factor": 0.157, "source": "klimaatplein.nl, 2024" }
+    ]
+  }
+] 

@@ -1,0 +1,2 @@
+// Re-export from TypeScript for ES module compatibility
+export { ClimatiqEmissionService, runEmissionDiagnostics, recalculateCompanyEmissions, checkEmissionFactorStatus, calculateDynamicEmissions } from './emissionService.ts'; 

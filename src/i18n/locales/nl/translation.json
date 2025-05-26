@@ -1,0 +1,283 @@
+{
+  "common": {
+    "login": "Inloggen",
+    "signup": "Aanmelden",
+    "back": "Terug",
+    "next": "Volgende",
+    "submit": "Versturen",
+    "email": "E-mail",
+    "password": "Wachtwoord",
+    "confirmPassword": "Bevestig wachtwoord",
+    "emailRequired": "E-mail is verplicht",
+    "passwordRequired": "Wachtwoord is verplicht",
+    "step": "Stap {{current}} van {{total}}",
+    "allRightsReserved": "Alle rechten voorbehouden",
+    "chat": "Chat met ons",
+    "yes": "Ja, graag",
+    "no": "Nee, bedankt"
+  },
+  "login": {
+    "pageTitle": "Inloggen",
+    "pageDescription": "Log in op je Circa-account om je CO2-uitstoot te beheren",
+    "title": "Welkom terug",
+    "subtitle": "Log in op je account om door te gaan",
+    "welcomeBack": "Welkom terug",
+    "enterCredentials": "Voer je gegevens in om toegang te krijgen tot je dashboard",
+    "forgotPassword": "Wachtwoord vergeten?",
+    "rememberMe": "Onthoud mij",
+    "signIn": "Inloggen",
+    "noAccount": "Nog geen account?"
+  },
+  "nav": {
+    "howItWorks": "Hoe het werkt",
+    "whyCirca": "Waarom Circa",
+    "features": "Functionaliteiten",
+    "testimonials": "Ervaringen",
+    "pricing": "Prijzen",
+    "languageSelector": "Taal wijzigen",
+    "blog": "Blog",
+    "contact": "Contact",
+    "calculator": "CO₂ Calculator",
+    "showcase": "Circa in Actie"
+  },
+  "hero": {
+    "title": {
+      "highlight": "Automatiseer",
+      "your": "Uw",
+      "carbon": "CO₂-boekhouding"
+    },
+    "subtitle": "Stroomlijn uw duurzaamheidsrapportage en bespaar tijd door uw CO₂-boekhouding te automatiseren.",
+    "cta": {
+      "primary": "Begin met impact maken",
+      "secondary": "Gratis CO₂-calculator"
+    },
+    "noCreditCard": "Geen creditcard vereist",
+    "trustedBy": "Vertrouwd door 500+ bedrijven",
+    "ratingSource": "Capterra"
+  },
+  "badges": {
+    "cdpReady": "CDP Ready",
+    "ghgProtocol": "GHG Protocol",
+    "iso14064": "ISO 14064",
+    "auditFriendly": "Audit Friendly",
+    "cdpShort": "CDP",
+    "ghgShort": "GHG",
+    "isoShort": "ISO"
+  },
+  "howItWorks": {
+    "title": "Hoe het werkt",
+    "subtitle": "Ons gestroomlijnde proces maakt CO₂-boekhouding eenvoudig en intuïtief",
+    "cta": "Upload uw gegevens nu",
+    "steps": {
+      "upload": {
+        "title": "Gegevens uploaden",
+        "description": "Eenvoudig importeren van gegevens uit spreadsheets, facturen en verbonden systemen"
+      },
+      "match": {
+        "title": "Geautomatiseerde matching",
+        "description": "AI-gestuurde classificatie en toewijzing van emissiefactoren"
+      },
+      "insights": {
+        "title": "Krijg inzichten",
+        "description": "Visualiseer uw CO₂-voetafdruk over alle emissiebereiken"
+      },
+      "reports": {
+        "title": "Genereer rapporten",
+        "description": "Exporteer audit-ready rapporten voor elk rapportagekader"
+      }
+    }
+  },
+  "showcase": {
+    "title": "Bekijk Circa in actie",
+    "subtitle": "Krachtige functies ontworpen voor uitstekend CO₂-beheer",
+    "cta": "Bekijk uw impact live"
+  },
+  "productShowcase": {
+    "dashboard": {
+      "title": "Dashboard Overzicht",
+      "description": "Volledige zichtbaarheid van uw CO₂-voetafdruk"
+    },
+    "emissions": {
+      "title": "Uitstoot Analyse",
+      "description": "Gedetailleerde breakdown van uw emissiegegevens"
+    },
+    "reports": {
+      "title": "Rapportgeneratie",
+      "description": "Geautomatiseerde rapportage voor alle frameworks"
+    }
+  },
+  "whyCirca": {
+    "title": "Waarom Circa",
+    "subtitle": "Vertrouwd door organisaties van alle groottes om hun CO₂-boekhouding te vereenvoudigen",
+    "benefit1Title": "Eenvoudige compliance",
+    "benefit1Description": "Voldoe aan regelgeving en eisen van belanghebbenden met nauwkeurige, controleerbare CO₂-rapportages.",
+    "benefit2Title": "Bruikbare inzichten",
+    "benefit2Description": "Transformeer ruwe emissiegegevens in strategische beslissingen met ons intelligente analyseplatform.",
+    "benefit3Title": "Teamwerk",
+    "benefit3Description": "Betrek uw hele organisatie bij uw duurzaamheidsreis met intuïtieve samenwerkingstools."
+  },
+  "features": {
+    "title": "Functionaliteiten",
+    "subtitle": "Alles wat u nodig heeft om uw CO₂-voetafdruk te meten, beheren en verminderen.",
+    "feature1Title": "Gegevensverzameling",
+    "feature1Description": "Eenvoudige gegevensupload met automatische validatie en matching.",
+    "feature2Title": "Emissie-dashboard",
+    "feature2Description": "Volg emissies in alle categorieën met real-time visualisatie.",
+    "feature3Title": "Aangepaste rapportages",
+    "feature3Description": "Genereer rapporten op maat voor verschillende regelgevingskaders.",
+    "feature4Title": "Reductieplanning",
+    "feature4Description": "Stel doelen en volg voortgang met praktische aanbevelingen.",
+    "cta": "Gratis van start gaan"
+  },
+  "finalCta": {
+    "title": "Klaar om uw CO₂-boekhouding te vereenvoudigen?",
+    "subtitle": "Sluit u aan bij honderden bedrijven die Circa gebruiken om hun CO₂-voetafdruk te meten, beheren en verminderen.",
+    "button": "Meld u nu aan"
+  },
+  "footer": {
+    "tagline": "CO₂-boekhouding vereenvoudigen voor bedrijven van alle groottes.",
+    "copyright": "Circa. Alle rechten voorbehouden."
+  },
+  "stats": {
+    "timeSaved": {
+      "value": "80%",
+      "label": "Tijdsbesparing",
+      "description": "Automatiseer gegevensverzameling en berekeningen die vroeger weken duurden"
+    },
+    "annualSavings": {
+      "value": "€50K+",
+      "label": "Jaarlijkse besparingen",
+      "description": "Gemiddelde kostenbesparing in vergelijking met traditionele consultancydiensten"
+    },
+    "auditReady": {
+      "value": "100%",
+      "label": "Audit-klaar",
+      "description": "Conforme rapporten met volledige gegevenstracering en verificatie"
+    }
+  },
+  "calculator": {
+    "title": "CO₂ Calculator",
+    "subtitle": "Vul uw verbruik in en ontvang een samenvatting per e-mail. Probeer het nu!",
+    "electricity": "Elektriciteit",
+    "heating": "Verwarming",
+    "businessTransport": "Zakelijk transport",
+    "flights": "Vluchten",
+    "companyInfo": "Bedrijfsinfo",
+    "summary": "Samenvatting",
+    "factor": "Factor",
+    "co2emissions": "CO₂-uitstoot",
+    "socialCost": "Sociale kosten",
+    "companyName": "Bedrijfsnaam",
+    "companyAddress": "Bedrijfsadres",
+    "employees": "Aantal werknemers (FTE)",
+    "grayElectricity": "Grijze stroom (NL gemiddeld)",
+    "greenElectricity": "Groene stroom uit buitenland",
+    "dutchWindSolar": "Groene stroom (Nederlandse wind en zon)",
+    "biomassElectricity": "Stroom uit biomassa",
+    "districtHeating": "Stadsverwarming (STEG)",
+    "naturalGas": "Aardgas",
+    "heatingOil": "Stookolie",
+    "geothermal": "Geothermie",
+    "propane": "Propaan",
+    "biogas": "Groengas (gemiddeld)",
+    "diesel": "Diesel",
+    "petrol": "Benzine",
+    "lpg": "LPG",
+    "cng": "CNG (aardgas)",
+    "electricGreen": "Elektrisch (met groene stroom)",
+    "electricGray": "Elektrisch (met grijze stroom)",
+    "train": "Trein (groene stroom)",
+    "bus": "Bus",
+    "metroTram": "Metro/Tram (groene stroom)",
+    "hydrogenGray": "Waterstof grijs",
+    "shortHaulFlight": "Vliegreis -2.500 km",
+    "longHaulFlight": "Vliegreis 2.500+ km",
+    "reductionTarget": {
+      "title": "CO₂-reductiedoel",
+      "percentage": "Doelreductiepercentage",
+      "year": "Doeljaar",
+      "current": "Huidige uitstoot",
+      "target": "Doeluitstoot",
+      "required": "Vereiste reductie"
+    },
+    "emissionsOverview": "Uitstootoverzicht",
+    "totalEmissions": "Totale uitstoot",
+    "totalSocialCost": "Totale sociale kosten",
+    "emissionsPerFTE": "Uitstoot per FTE",
+    "emailReport": "E-mail voor gedetailleerd rapport",
+    "sendReport": "Stuur gedetailleerd rapport per e-mail",
+    "thankYou": "Bedankt! U ontvangt binnenkort een gedetailleerd rapport per e-mail.",
+    "pleaseEnterValue": "Vul een waarde in om uw CO₂-voetafdruk te berekenen.",
+    "recommendations": "Aanbevelingen",
+    "recommendationSubtitle": "Op basis van uw gegevens zijn hier enkele suggesties om uw CO₂-voetafdruk te verminderen:",
+    "emissionFactorSource": "Bron: Klimaatdatabases, geverifieerd 2024"
+  },
+  "impact": {
+    "high": "Hoge Impact",
+    "medium": "Gemiddelde Impact",
+    "low": "Lage Impact"
+  },
+  "effort": {
+    "high": "Hoge Inspanning",
+    "medium": "Gemiddelde Inspanning",
+    "low": "Lage Inspanning"
+  },
+  "savings": "Besparing: {{value}}",
+  "tips": {
+    "electricity": {
+      "switchto100renewableenergy": "Overstappen op 100% Hernieuwbare Energie",
+      "switchto100renewableenergy.description": "Ga naar een leverancier die gecertificeerde groene stroom aanbiedt van Nederlandse wind of zonnebronnen.",
+      "installlighting": "LED-verlichting installeren",
+      "installlighting.description": "Vervang alle conventionele verlichting door LED-alternatieven in uw kantoor.",
+      "smartbuildingcontrols": "Slimme Gebouwbesturing",
+      "smartbuildingcontrols.description": "Installeer bewegingssensoren en slimme thermostaten om energieverspilling te verminderen.",
+      "solarpanelinstallation": "Zonnepanelen Installatie",
+      "solarpanelinstallation.description": "Installeer zonnepanelen op uw kantoordak om uw eigen hernieuwbare elektriciteit op te wekken."
+    },
+    "heating": {
+      "buildinginsulation": "Gebouwisolatie",
+      "buildinginsulation.description": "Verbeter de isolatie van muren, daken en ramen om warmteverlies te verminderen.",
+      "heatpumpinstallation": "Warmtepomp installatie",
+      "heatpumpinstallation.description": "Vervang verwarmingssystemen op fossiele brandstoffen door elektrische warmtepompen.",
+      "switchtobiogas": "Overschakelen op Biogas",
+      "switchtobiogas.description": "Als warmtepompen niet haalbaar zijn, overweeg dan over te schakelen op gecertificeerd biogas.",
+      "lowerthermostat": "Thermostaat lager zetten",
+      "lowerthermostat.description": "Verlaag de kantoortemperatuur met 1-2°C tijdens werkuren."
+    },
+    "businessTransport": {
+      "electricvehiclefleet": "Elektrische voertuigvloot",
+      "electricvehiclefleet.description": "Vervang bedrijfswagens door elektrische voertuigen die worden opgeladen met hernieuwbare energie.",
+      "remoteworkpolicy": "Thuiswerkbeleid",
+      "remoteworkpolicy.description": "Implementeer een gestructureerd thuiswerkbeleid om woon-werkverkeer te verminderen.",
+      "companybikingprogram": "Bedrijfsfietsenprogramma",
+      "companybikingprogram.description": "Bied bedrijfsfietsen of e-bikes aan voor lokale ritten en woon-werkverkeer.",
+      "greencommutingincentives": "Groene reiskostenvergoeding",
+      "greencommutingincentives.description": "Bied financiële stimulansen voor werknemers die het openbaar vervoer gebruiken."
+    },
+    "flights": {
+      "virtualmeetingpolicy": "Beleid voor virtuele vergaderingen",
+      "virtualmeetingpolicy.description": "Implementeer een beleid dat virtuele alternatieven vereist voordat vluchten worden goedgekeurd.",
+      "traintravelforshortdistances": "Treinreizen voor korte afstanden",
+      "traintravelforshortdistances.description": "Verplicht treinreizen voor trips onder 700 km wanneer mogelijk.",
+      "combinetrips": "Combineer reizen",
+      "combinetrips.description": "Plan meerdere afspraken in dezelfde regio voor één enkele reis.",
+      "highqualitycarbonoffsetting": "Hoogwaardige CO₂-compensatie",
+      "highqualitycarbonoffsetting.description": "Investeer in Gold Standard CO₂-compensaties voor onvermijdbare vluchten."
+    }
+  },
+  "alt": {
+    "userPhoto": "Gebruiker",
+    "dashboardImage": "Circa Dashboard"
+  },
+  "registration": {
+    "successTitle": "Registratie Succesvol!",
+    "successDescription": "Bedankt voor het aanmelden bij Circa! Controleer uw e-mail om uw account te verifiëren."
+  },
+  "chat": {
+    "welcome": "Welkom bij Circa! Hoe kunnen we u helpen?",
+    "bookQuestion": "Wilt u een demo of adviesgesprek inplannen met ons team?",
+    "noBooking": "Geen probleem! Als u vragen heeft over onze diensten, kunt u ons bereiken via info@circa.site.",
+    "assistMessage": "Ons team staat klaar om u te helpen.",
+    "contactInfo": "Email: info@circa.site"
+  }
+} 

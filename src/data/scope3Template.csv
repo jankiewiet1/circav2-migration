@@ -1,0 +1,4 @@
+
+supplier_name,supplier_type,commodity_type,annual_spend,emissions_co2e,date,supplier_address,procurement_contact,emission_factor,scope_description,reporting_boundary,reporting_period,activity_data,emission_unit,uncertainty_notes,trend_notes,progress_toward_target,additional_notes
+ABC Logistics,Transport,Freight,50000,3.2,2024-01-01,123 Business St,john@abclog.com,0.064,Upstream transportation,Global operations,2024 Q1,Shipping records,kg CO2e per $,Low uncertainty,Improving,On track,New fleet vehicles
+XYZ Materials,Manufacturing,Raw Materials,75000,5.8,2024-01-15,456 Industry Ave,sarah@xyzmat.com,0.077,Purchased goods,All products,2024 Q1,Purchase orders,kg CO2e per $,Medium uncertainty,Stable,Behind target,Material substitution planned

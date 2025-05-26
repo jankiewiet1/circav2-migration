@@ -1,0 +1,134 @@
+[
+  {
+    "category": "Elektriciteit",
+    "tips": [
+      {
+        "title": "Switch to 100% Renewable Energy",
+        "description": "Change to a provider offering certified green electricity from Dutch wind or solar sources.",
+        "impact": "high",
+        "difficulty": "low",
+        "savingPotential": "100%"
+      },
+      {
+        "title": "Install LED Lighting",
+        "description": "Replace all conventional lighting with LED alternatives throughout your office.",
+        "impact": "medium",
+        "difficulty": "low",
+        "savingPotential": "75-90%"
+      },
+      {
+        "title": "Smart Building Controls",
+        "description": "Install motion sensors and smart thermostats to reduce energy waste.",
+        "impact": "medium",
+        "difficulty": "medium",
+        "savingPotential": "20-30%"
+      },
+      {
+        "title": "Solar Panel Installation",
+        "description": "Install solar panels on your office roof to generate your own renewable electricity.",
+        "impact": "high",
+        "difficulty": "high",
+        "savingPotential": "30-100%"
+      }
+    ]
+  },
+  {
+    "category": "Verwarming",
+    "tips": [
+      {
+        "title": "Building Insulation",
+        "description": "Improve wall, roof, and window insulation to reduce heat loss.",
+        "impact": "high",
+        "difficulty": "high",
+        "savingPotential": "25-60%"
+      },
+      {
+        "title": "Heat Pump Installation",
+        "description": "Replace fossil fuel heating systems with electric heat pumps.",
+        "impact": "high",
+        "difficulty": "high",
+        "savingPotential": "50-80%"
+      },
+      {
+        "title": "Switch to Biogas",
+        "description": "If heat pumps aren't viable, consider switching to certified biogas.",
+        "impact": "medium",
+        "difficulty": "low",
+        "savingPotential": "60-75%"
+      },
+      {
+        "title": "Lower Thermostat Setting",
+        "description": "Reduce office temperature by 1-2°C during working hours.",
+        "impact": "medium",
+        "difficulty": "low",
+        "savingPotential": "8-12%"
+      }
+    ]
+  },
+  {
+    "category": "Zakelijk vervoer",
+    "tips": [
+      {
+        "title": "Electric Vehicle Fleet",
+        "description": "Replace company cars with electric vehicles charged with renewable energy.",
+        "impact": "high",
+        "difficulty": "medium",
+        "savingPotential": "90-100%"
+      },
+      {
+        "title": "Remote Work Policy",
+        "description": "Implement a structured remote work policy to reduce commuting.",
+        "impact": "high",
+        "difficulty": "low",
+        "savingPotential": "20-40%"
+      },
+      {
+        "title": "Company Biking Program",
+        "description": "Provide company bikes or e-bikes for local trips and commuting.",
+        "impact": "medium",
+        "difficulty": "low",
+        "savingPotential": "100% per trip"
+      },
+      {
+        "title": "Green Commuting Incentives",
+        "description": "Offer financial incentives for employees using public transport.",
+        "impact": "medium",
+        "difficulty": "low",
+        "savingPotential": "50-70% per commuter"
+      }
+    ]
+  },
+  {
+    "category": "Vliegreizen",
+    "tips": [
+      {
+        "title": "Virtual Meeting Policy",
+        "description": "Implement a policy requiring virtual alternatives before approving flights.",
+        "impact": "high",
+        "difficulty": "low",
+        "savingPotential": "Variable"
+      },
+      {
+        "title": "Train Travel for Short Distances",
+        "description": "Mandate train travel for trips under 700km when possible.",
+        "impact": "high",
+        "difficulty": "medium",
+        "savingPotential": "70-90% per trip"
+      },
+      {
+        "title": "Combine Trips",
+        "description": "Plan multiple meetings in the same region for a single trip.",
+        "impact": "medium",
+        "difficulty": "medium",
+        "savingPotential": "50%+"
+      },
+      {
+        "title": "High Quality Carbon Offsetting",
+        "description": "Invest in Gold Standard carbon offsets for unavoidable flights.",
+        "impact": "medium",
+        "difficulty": "low",
+        "savingPotential": "100% (offset)"
+      }
+    ]
+  }
+] 
