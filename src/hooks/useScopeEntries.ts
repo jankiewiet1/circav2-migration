@@ -9,31 +9,17 @@ type EmissionEntryBase = Database['public']['Tables']['emission_entries']['Row']
 
 // Manually define the expected structure for the calculation part
 // Based on the columns used in the working SQL query (get_dashboard_data)
-interface EmissionCalculationPart {
-  id: string; 
-  entry_id: string;
+interface EmissionCalculation {
+  id: number;
   total_emissions: number | null;
-  // Add climatiq factor information
-  climatiq_factor_name?: string | null;
-  climatiq_source?: string | null;
-  climatiq_year?: number | null;
-  climatiq_category?: string | null;
-  climatiq_region?: string | null;
-  climatiq_activity_id?: string | null;
-  // Add calculation details
-  category?: string | null;
-  unit?: string | null;
-  quantity?: number | null;
-  date?: string | null; 
-  co2_factor?: number | null;
-  ch4_factor?: number | null;
-  n2o_factor?: number | null;
-  co2_emissions?: number | null;
-  ch4_emissions?: number | null;
-  n2o_emissions?: number | null;
+  emissions_unit: string | null;
+  calculated_at: string;
+  factor_name?: string | null;
   source?: string | null;
-  calculated_at?: string | null;
-  emissions_unit?: string | null; // The unit for emissions (usually tCO2e)
+  year_used?: number | null;
+  category?: string | null;
+  region?: string | null;
+  activity_id?: string | null;
 }
 
 // Combine the base entry type with the expected calculation structure
@@ -49,7 +35,7 @@ export interface EmissionEntryWithCalculation {
   created_at: string;
   match_status?: string | null;
   notes?: string | null;
-  emission_calc_climatiq: EmissionCalculationPart[] | null; // Expecting an array from Supabase join
+  emission_calc_openai: EmissionCalculation[] | null; // Updated table name
 }
 
 export const useScopeEntries = (scope: 1 | 2 | 3) => {
@@ -76,7 +62,7 @@ export const useScopeEntries = (scope: 1 | 2 | 3) => {
         .from('emission_entries')
         .select(`
           *,
-          emission_calc_climatiq!inner(*)
+          emission_calc_openai(*)
         `)
         .eq('company_id', company.id)
         .eq('scope', scope)

@@ -1,4 +1,3 @@
-
 export type Json =
   | string
   | number
@@ -396,75 +395,72 @@ export type Database = {
           },
         ]
       }
-      emission_calc_climatiq: {
+      emission_calc_openai: {
         Row: {
           activity_data: Json | null
-          calculated_at: string
+          activity_id: string | null
+          calculated_at: string | null
+          category: string | null
           ch4_emissions: number | null
-          climatiq_activity_id: string | null
-          climatiq_category: string | null
-          climatiq_emissions_factor_id: string | null
-          climatiq_factor_name: string | null
-          climatiq_region: string | null
-          climatiq_source: string | null
-          climatiq_year: number | null
           co2_emissions: number | null
           company_id: string
-          created_at: string
-          emissions_unit: string
+          created_at: string | null
+          emissions_factor_id: string | null
+          emissions_unit: string | null
           entry_id: string | null
+          factor_name: string | null
           id: string
           n2o_emissions: number | null
+          region: string | null
           request_params: Json | null
-          scope: number | null
-          total_emissions: number
-          updated_at: string | null
+          scope: string | null
+          source: string | null
+          total_emissions: number | null
+          year_used: number | null
         }
         Insert: {
           activity_data?: Json | null
-          calculated_at?: string
+          activity_id?: string | null
+          calculated_at?: string | null
+          category?: string | null
           ch4_emissions?: number | null
-          climatiq_activity_id?: string | null
-          climatiq_category?: string | null
-          climatiq_emissions_factor_id?: string | null
-          climatiq_factor_name?: string | null
-          climatiq_region?: string | null
-          climatiq_source?: string | null
-          climatiq_year?: number | null
           co2_emissions?: number | null
           company_id: string
-          created_at?: string
-          emissions_unit?: string
+          created_at?: string | null
+          emissions_factor_id?: string | null
+          emissions_unit?: string | null
           entry_id?: string | null
+          factor_name?: string | null
           id?: string
           n2o_emissions?: number | null
+          region?: string | null
           request_params?: Json | null
-          scope?: number | null
-          total_emissions: number
-          updated_at?: string | null
+          scope?: string | null
+          source?: string | null
+          total_emissions?: number | null
+          year_used?: number | null
         }
         Update: {
           activity_data?: Json | null
-          calculated_at?: string
+          activity_id?: string | null
+          calculated_at?: string | null
+          category?: string | null
           ch4_emissions?: number | null
-          climatiq_activity_id?: string | null
-          climatiq_category?: string | null
-          climatiq_emissions_factor_id?: string | null
-          climatiq_factor_name?: string | null
-          climatiq_region?: string | null
-          climatiq_source?: string | null
-          climatiq_year?: number | null
           co2_emissions?: number | null
           company_id?: string
-          created_at?: string
-          emissions_unit?: string
+          created_at?: string | null
+          emissions_factor_id?: string | null
+          emissions_unit?: string | null
           entry_id?: string | null
+          factor_name?: string | null
           id?: string
           n2o_emissions?: number | null
+          region?: string | null
           request_params?: Json | null
-          scope?: number | null
-          total_emissions?: number
-          updated_at?: string | null
+          scope?: string | null
+          source?: string | null
+          total_emissions?: number | null
+          year_used?: number | null
         }
         Relationships: [
           {
@@ -583,7 +579,6 @@ export type Database = {
           created_at: string
           date: string
           description: string
-          embedding: string | null
           id: string
           match_status: string | null
           notes: string | null
@@ -600,7 +595,6 @@ export type Database = {
           created_at?: string
           date: string
           description: string
-          embedding?: string | null
           id?: string
           match_status?: string | null
           notes?: string | null
@@ -617,7 +611,6 @@ export type Database = {
           created_at?: string
           date?: string
           description?: string
-          embedding?: string | null
           id?: string
           match_status?: string | null
           notes?: string | null
@@ -644,7 +637,6 @@ export type Database = {
           category_2: string | null
           category_3: string | null
           category_4: string | null
-          embedding: string | null
           "GHG Conversion Factor": number | null
           "GHG/Unit": string | null
           id: number
@@ -657,7 +649,6 @@ export type Database = {
           category_2?: string | null
           category_3?: string | null
           category_4?: string | null
-          embedding?: string | null
           "GHG Conversion Factor"?: number | null
           "GHG/Unit"?: string | null
           id?: number
@@ -670,7 +661,6 @@ export type Database = {
           category_2?: string | null
           category_3?: string | null
           category_4?: string | null
-          embedding?: string | null
           "GHG Conversion Factor"?: number | null
           "GHG/Unit"?: string | null
           id?: number
@@ -1041,9 +1031,9 @@ export type Database = {
           ai_confidence: number | null
           ai_notes: string | null
           ai_processed: boolean | null
-          climatiq_activity_id: string | null
-          climatiq_factor_name: string | null
-          climatiq_source: string | null
+          activity_id: string | null
+          factor_name: string | null
+          source: string | null
           company_id: string | null
           cost: number | null
           created_at: string | null
@@ -1185,7 +1175,6 @@ export type Database = {
           created_at: string
           date: string
           description: string
-          embedding: string | null
           id: string
           match_status: string | null
           notes: string | null
@@ -1273,53 +1262,6 @@ export type Database = {
       mark_notification_read: {
         Args: { notification_id: string }
         Returns: undefined
-      }
-      match_categories: {
-        Args: {
-          query_embedding: string
-          match_threshold: number
-          match_count: number
-          table_name: string
-        }
-        Returns: {
-          id: number
-          category_1: string
-          category_2: string
-          category_3: string
-          category_4: string
-          uom: string
-          similarity: number
-        }[]
-      }
-      match_categories_with_factors: {
-        Args: {
-          query_embedding: string
-          match_threshold: number
-          match_count: number
-        }
-        Returns: {
-          category_1: string
-          category_2: string
-          category_3: string
-          category_4: string
-          similarity: number
-          factors: Json
-        }[]
-      }
-      match_emission_factor: {
-        Args: { query_embedding: string; match_threshold?: number }
-        Returns: {
-          id: number
-          scope: string
-          category_1: string
-          category_2: string
-          category_3: string
-          category_4: string
-          uom: string
-          source: string
-          conversion_factor: number
-          similarity: number
-        }[]
       }
       migrate_emission_entries_to_data_entry: {
         Args: Record<PropertyKey, never>

@@ -89,33 +89,37 @@ export function useDashboardData(companyId: string | undefined, filters: Dashboa
 
       try {
         // Get emission entries with calculations
-        const { data: entriesWithCalcs, error: entriesError } = await supabase
+        const { data: entriesData, error } = await supabase
           .from('emission_entries')
           .select(`
             id,
-            date,
-            scope,
             category,
-            description,
             quantity,
             unit,
+            scope,
+            date,
             created_at,
-            emission_calc_climatiq(
+            emission_calc_openai(
               id,
               total_emissions,
-              calculated_at
+              emissions_unit,
+              calculated_at,
+              factor_name,
+              source,
+              activity_id,
+              region,
+              category,
+              year_used
             )
           `)
           .eq('company_id', companyId)
           .order('date', { ascending: false });
           
-        if (entriesError) {
-          throw entriesError;
-        }
+        if (error) throw error;
         
-        console.log("Fetched emission entries:", entriesWithCalcs?.length || 0, "records");
+        console.log("Fetched emission entries:", entriesData?.length || 0, "records");
         
-        if (!entriesWithCalcs || entriesWithCalcs.length === 0) {
+        if (!entriesData || entriesData.length === 0) {
           // No data found
           setData(createEmptyDashboardData());
           setLoading(false);
@@ -123,7 +127,7 @@ export function useDashboardData(companyId: string | undefined, filters: Dashboa
         }
         
         // Process the entries data
-        const processedData = processEntriesData(entriesWithCalcs, filters);
+        const processedData = processEntriesData(entriesData, filters);
         setData(processedData);
         
       } catch (err: any) {
@@ -180,9 +184,9 @@ function processEntriesData(entriesData: any[], filters: DashboardFilters): Dash
   // Simplify and extract data
   const processedEntries = entriesData.map(entry => {
     // Get the total emissions from the calculation
-    const totalEmissions = entry.emission_calc_climatiq && 
-                           entry.emission_calc_climatiq.length > 0 ? 
-                           entry.emission_calc_climatiq[0].total_emissions || 0 : 0;
+    const totalEmissions = entry.emission_calc_openai && 
+                           entry.emission_calc_openai.length > 0 ? 
+                           entry.emission_calc_openai[0].total_emissions || 0 : 0;
                            
     // Get the date from entry, not calculation
     const entryDate = new Date(entry.date);

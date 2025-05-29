@@ -44,14 +44,14 @@ export const CalculationStatus = () => {
     try {
       // Get latest calculation based on emission_calculations
       const { data: latestCalc, error: calcError } = await supabase
-        .from('emission_calc_climatiq')
-        .select('*')
-        .eq('entry_id', entry.id)
+        .from('emission_calc_openai')
+        .select('calculated_at')
+        .eq('company_id', company.id)
         .order('calculated_at', { ascending: false })
         .limit(1);
       
       if (latestCalc && latestCalc.length > 0) {
-        setLastCalculation((latestCalc[0] as CalculationLog).calculated_at);
+        setLastCalculation(latestCalc[0].calculated_at);
       }
       
       // Get calculation stats

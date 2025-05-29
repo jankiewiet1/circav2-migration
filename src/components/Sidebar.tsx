@@ -17,7 +17,8 @@ import {
   Truck, 
   HelpCircle,
   LogOut,
-  Upload
+  Upload,
+  Database
 } from "lucide-react";
 
 // Memoize the Logo component to prevent unnecessary re-renders
@@ -98,7 +99,18 @@ export const Sidebar = () => {
       <nav className="flex-1 px-1.5 py-3 space-y-0.5 overflow-y-auto">
         <NavLink to="/dashboard" icon={<LayoutDashboard size={18} />} label="Dashboard" isExpanded={isExpanded} isActive={isPathActive('/dashboard')} />
         <NavLink to="/reports" icon={<FileText size={18} />} label="Reports" isExpanded={isExpanded} isActive={isPathActive('/reports')} />
+        
+        <div className="pt-4 pb-1">
+          <div className={cn(
+            "px-3 text-xs font-medium text-white/60 transition-all duration-300",
+            isExpanded ? "opacity-100" : "opacity-0 hidden"
+          )}>
+            Data
+          </div>
+        </div>
+        
         <NavLink to="/data-upload" icon={<Upload size={18} />} label="Data Upload" isExpanded={isExpanded} isActive={isPathActive('/data-upload')} />
+        <NavLink to="/data-traceability" icon={<Database size={18} />} label="Data Traceability" isExpanded={isExpanded} isActive={isPathActive('/data-traceability')} />
         
         <div className="pt-4 pb-1">
           <div className={cn(

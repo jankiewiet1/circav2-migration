@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Flame, BarChart2, Calendar, AlertCircle, RefreshCw } from 'lucide-react';
+import { Flame, BarChart2, Calendar, AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ChartContainer } from '@/components/ui/chart';
 import { EmissionEntryWithCalculation } from '@/hooks/useScopeEntries';
@@ -19,13 +19,49 @@ interface Scope1DashboardProps {
 }
 
 const getCalculatedEmissions = (entry: EmissionEntryWithCalculation): number => {
-  if (entry.emission_calc_climatiq && entry.emission_calc_climatiq.length > 0) {
-    return entry.emission_calc_climatiq[0]?.total_emissions ?? 0;
+  if (entry.emission_calc_openai && entry.emission_calc_openai.length > 0) {
+    return entry.emission_calc_openai[0]?.total_emissions ?? 0;
   }
   return 0;
 };
 
-export const Scope1Dashboard = ({ entries, loading, error, refetch }: Scope1DashboardProps) => {
+const Scope1Dashboard: React.FC<Scope1DashboardProps> = ({ entries, loading, error, refetch }) => {
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Loading...</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-32">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive" className="my-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error Loading Scope 1 Overview</AlertTitle>
+        <AlertDescription>
+          {error || "An unexpected error occurred."}
+          <Button variant="secondary" size="sm" onClick={refetch} className="ml-4">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Try Again
+          </Button>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  const totalEmissions = entries.reduce((sum, entry) => {
+    if (entry.emission_calc_openai && entry.emission_calc_openai.length > 0) {
+      return sum + (entry.emission_calc_openai[0]?.total_emissions ?? 0);
+    }
+    return sum;
+  }, 0);
+
   const overviewData = useMemo(() => {
     if (loading || !entries || entries.length === 0) {
       return { totalEmissions: 0, monthlyData: [], topCategory: 'N/A', lastDate: null };
@@ -93,22 +129,6 @@ export const Scope1Dashboard = ({ entries, loading, error, refetch }: Scope1Dash
     };
 
   }, [entries, loading]);
-
-  if (error) {
-     return (
-      <Alert variant="destructive" className="my-6">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error Loading Scope 1 Overview</AlertTitle>
-        <AlertDescription>
-          {error || "An unexpected error occurred."}
-          <Button variant="secondary" size="sm" onClick={refetch} className="ml-4">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Try Again
-          </Button>
-        </AlertDescription>
-      </Alert>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -227,7 +247,11 @@ export const Scope1Dashboard = ({ entries, loading, error, refetch }: Scope1Dash
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Legend formatter={(value, entry) => entry?.payload?.name || ''} />
+                      <Legend formatter={(value, entry) => {
+                        // Type assertion for payload
+                        const payload = entry?.payload as any;
+                        return payload?.name || '';
+                      }} />
                       <RechartsTooltip 
                         formatter={(value: number, name: string, props: any) => {
                           return [`${value.toFixed(2)} tCO₂e (${props.payload.percentage}%)`, props.payload.name];
@@ -245,4 +269,6 @@ export const Scope1Dashboard = ({ entries, loading, error, refetch }: Scope1Dash
       </Card>
     </div>
   );
-}; 
+};
+
+export default Scope1Dashboard; 

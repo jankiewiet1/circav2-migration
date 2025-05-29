@@ -29,9 +29,31 @@ interface TextractResult {
   }>
   documentType: 'invoice' | 'receipt' | 'utility_bill' | 'statement' | 'other'
   overallConfidence: number
+  pageCount?: number
+  processingMethod: 'textract_analyze' | 'textract_detect' | 'fallback'
 }
 
-class AWSTextractService {
+interface CarbonEntry {
+  date: string
+  activity_description: string
+  quantity: number
+  unit: string
+  ghg_category: 'Scope 1' | 'Scope 2' | 'Scope 3'
+  supplier_vendor?: string
+  cost?: number
+  currency?: string
+  notes?: string
+  confidence: number
+}
+
+interface TextChunk {
+  content: string
+  type: 'text' | 'table' | 'key_value'
+  metadata?: any
+  tokenCount: number
+}
+
+class EnhancedAWSTextractService {
   private textractClient: TextractClient
 
   constructor() {
@@ -54,10 +76,10 @@ class AWSTextractService {
 
   async processPDFFromURL(url: string): Promise<TextractResult> {
     try {
-      console.log(`=== TEXTRACT PROCESSING DEBUG ===`)
-      console.log(`Processing PDF with Textract: ${url}`)
+      console.log(`=== ENHANCED TEXTRACT PROCESSING ===`)
+      console.log(`Processing PDF: ${url}`)
       
-      // Download the file
+      // Download and validate file
       const response = await fetch(url)
       if (!response.ok) {
         throw new Error(`Failed to download file: ${response.statusText}`)
@@ -66,648 +88,538 @@ class AWSTextractService {
       const fileBuffer = await response.arrayBuffer()
       const documentBytes = new Uint8Array(fileBuffer)
       
-      console.log(`File downloaded successfully:`)
-      console.log(`- File size: ${documentBytes.byteLength} bytes`)
-      console.log(`- Content-Type: ${response.headers.get('content-type')}`)
-      console.log(`- File URL: ${url}`)
+      console.log(`File downloaded: ${documentBytes.byteLength} bytes`)
       
-      // Check file size limits (Textract has a 10MB limit for synchronous processing)
-      const fileSizeMB = documentBytes.byteLength / (1024 * 1024)
-      console.log(`- File size in MB: ${fileSizeMB.toFixed(2)}`)
+      // Validate PDF
+      this.validatePDF(documentBytes)
       
-      if (fileSizeMB > 10) {
-        throw new Error(`File too large for Textract: ${fileSizeMB.toFixed(2)}MB (max 10MB)`)
-      }
-      
-      // Check if it's actually a PDF by looking at the file header
-      const fileHeader = Array.from(documentBytes.slice(0, 8))
-        .map(byte => String.fromCharCode(byte))
-        .join('')
-      
-      console.log(`- File header: ${fileHeader}`)
-      console.log(`- Is PDF: ${fileHeader.startsWith('%PDF')}`)
-      
-      if (!fileHeader.startsWith('%PDF')) {
-        throw new Error(`File is not a valid PDF. Header: ${fileHeader}`)
-      }
-      
-      // Additional PDF validation - check for common PDF issues
-      const pdfVersion = fileHeader.substring(1, 8) // Extract PDF version
-      console.log(`- PDF Version: ${pdfVersion}`)
-      
-      // Check for encrypted/password-protected PDFs
-      const fileString = Array.from(documentBytes.slice(0, 1024))
-        .map(byte => String.fromCharCode(byte))
-        .join('')
-      
-      if (fileString.includes('/Encrypt')) {
-        throw new Error('PDF appears to be encrypted or password-protected, which is not supported by Textract')
-      }
-      
-      // Additional PDF format checks
-      const hasXref = fileString.includes('xref')
-      const hasTrailer = fileString.includes('trailer')
-      const hasStartxref = fileString.includes('startxref')
-      
-      console.log(`- PDF Structure Check:`)
-      console.log(`  - Has xref table: ${hasXref}`)
-      console.log(`  - Has trailer: ${hasTrailer}`)
-      console.log(`  - Has startxref: ${hasStartxref}`)
-      
-      // Check for linearized PDF (web-optimized)
-      const isLinearized = fileString.includes('/Linearized')
-      console.log(`  - Is linearized: ${isLinearized}`)
-      
-      // Check for common problematic PDF features
-      const hasJavaScript = fileString.includes('/JavaScript')
-      const hasEmbeddedFiles = fileString.includes('/EmbeddedFiles')
-      const hasAnnotations = fileString.includes('/Annots')
-      
-      console.log(`  - Has JavaScript: ${hasJavaScript}`)
-      console.log(`  - Has embedded files: ${hasEmbeddedFiles}`)
-      console.log(`  - Has annotations: ${hasAnnotations}`)
-      
-      console.log(`Sending to Textract...`)
-      
-      // Try with DetectDocumentText first (simpler, more compatible)
+      // Try enhanced processing first (AnalyzeDocument)
       try {
-        console.log('Attempting DetectDocumentText (simpler method)...')
-        const detectCommand = new DetectDocumentTextCommand({
-          Document: {
-            Bytes: documentBytes,
-          },
+        console.log('Attempting AnalyzeDocument with TABLES and FORMS...')
+        const analyzeCommand = new AnalyzeDocumentCommand({
+          Document: { Bytes: documentBytes },
+          FeatureTypes: ['TABLES', 'FORMS'],
         })
 
-        const detectResponse = await this.textractClient.send(detectCommand)
-        console.log('✅ Textract DetectDocumentText completed successfully')
-        return this.processDetectTextResponse(detectResponse)
+        const response = await this.textractClient.send(analyzeCommand)
+        console.log('✅ AnalyzeDocument successful')
+        return this.processAnalyzeResponse(response)
         
-      } catch (detectError) {
-        console.error('DetectDocumentText failed:', detectError.name, detectError.message)
+      } catch (analyzeError) {
+        console.warn('AnalyzeDocument failed, trying DetectDocumentText:', analyzeError.message)
         
-        // Try with AnalyzeDocument as fallback
-        try {
-          console.log('Attempting AnalyzeDocument (advanced method)...')
-          const analyzeCommand = new AnalyzeDocumentCommand({
-            Document: {
-              Bytes: documentBytes,
-            },
-            FeatureTypes: ['TABLES', 'FORMS'],
-          })
+        // Fallback to basic text detection
+        const detectCommand = new DetectDocumentTextCommand({
+          Document: { Bytes: documentBytes },
+        })
 
-          const textractResponse = await this.textractClient.send(analyzeCommand)
-          console.log('✅ Textract AnalyzeDocument completed successfully')
-          return this.processTextractResponse(textractResponse)
-          
-        } catch (analyzeError) {
-          console.error('AnalyzeDocument also failed:', analyzeError.name, analyzeError.message)
-          
-          // If both Textract methods fail with UnsupportedDocumentException,
-          // try basic text extraction as final fallback
-          if (detectError.name === 'UnsupportedDocumentException' && 
-              analyzeError.name === 'UnsupportedDocumentException') {
-            
-            console.log('🔄 Both Textract methods failed with UnsupportedDocumentException')
-            console.log('   Attempting basic text extraction fallback...')
-            
-            try {
-              // Extract basic text content from PDF using simple parsing
-              const basicText = this.extractBasicTextFromPDF(documentBytes)
-              
-              if (basicText && basicText.length > 10) {
-                console.log('✅ Basic text extraction successful')
-                console.log(`   Extracted ${basicText.length} characters`)
-                
-                return {
-                  extractedText: basicText,
-                  tables: [],
-                  keyValuePairs: [],
-                  documentType: this.classifyDocument(basicText),
-                  overallConfidence: 0.6 // Lower confidence for basic extraction
-                }
-              } else {
-                console.log('❌ Basic text extraction failed - insufficient text')
-              }
-            } catch (basicError) {
-              console.error('Basic text extraction failed:', basicError.message)
-            }
-          }
-          
-          // Provide detailed error information
-          const errorDetails = {
-            detectError: {
-              name: detectError.name,
-              message: detectError.message,
-              code: detectError.code || 'Unknown'
-            },
-            analyzeError: {
-              name: analyzeError.name,
-              message: analyzeError.message,
-              code: analyzeError.code || 'Unknown'
-            },
-            pdfInfo: {
-              version: pdfVersion,
-              size: fileSizeMB,
-              hasXref,
-              hasTrailer,
-              hasStartxref,
-              isLinearized,
-              hasJavaScript,
-              hasEmbeddedFiles,
-              hasAnnotations
-            }
-          }
-          
-          console.error('=== DETAILED TEXTRACT ERROR INFO ===')
-          console.error(JSON.stringify(errorDetails, null, 2))
-          
-          throw new Error(`All text extraction methods failed. This PDF format is not compatible with Textract. DetectText: ${detectError.message}, AnalyzeDocument: ${analyzeError.message}`)
-        }
+        const response = await this.textractClient.send(detectCommand)
+        console.log('✅ DetectDocumentText successful (fallback)')
+        return this.processDetectResponse(response)
       }
       
     } catch (error) {
-      console.error('=== TEXTRACT ERROR ===')
-      console.error('Error name:', error.name)
-      console.error('Error message:', error.message)
-      console.error('Full error:', error)
+      console.error('Textract processing failed:', error)
       throw new Error(`Textract processing failed: ${error.message}`)
     }
   }
 
-  private processTextractResponse(response: any): TextractResult {
+  private validatePDF(documentBytes: Uint8Array): void {
+    const fileSizeMB = documentBytes.byteLength / (1024 * 1024)
+    
+    if (fileSizeMB > 10) {
+      throw new Error(`File too large: ${fileSizeMB.toFixed(2)}MB (max 10MB for Textract)`)
+    }
+    
+    const fileHeader = Array.from(documentBytes.slice(0, 8))
+      .map(byte => String.fromCharCode(byte))
+      .join('')
+    
+    if (!fileHeader.startsWith('%PDF')) {
+      throw new Error(`Invalid PDF file. Header: ${fileHeader}`)
+    }
+    
+    // Check for encryption
+    const fileString = Array.from(documentBytes.slice(0, 2048))
+      .map(byte => String.fromCharCode(byte))
+      .join('')
+    
+    if (fileString.includes('/Encrypt')) {
+      throw new Error('Encrypted PDFs are not supported')
+    }
+    
+    console.log(`PDF validation passed: ${fileSizeMB.toFixed(2)}MB`)
+  }
+
+  private processAnalyzeResponse(response: any): TextractResult {
     const blocks = response.Blocks || []
     let extractedText = ''
     const tables: Array<{ headers: string[]; rows: string[][]; confidence: number }> = []
     const keyValuePairs: Array<{ key: string; value: string; confidence: number }> = []
     
-    // Extract text from LINE blocks
-    const lineBlocks = blocks.filter((block: any) => block.BlockType === 'LINE')
-    lineBlocks.forEach((block: any) => {
-      if (block.Text) {
-        extractedText += block.Text + '\n'
-      }
-    })
+    // Extract text blocks
+    const textBlocks = blocks.filter((block: any) => block.BlockType === 'LINE')
+    extractedText = textBlocks.map((block: any) => block.Text || '').join('\n')
     
-    // Process tables
+    // Extract tables
     const tableBlocks = blocks.filter((block: any) => block.BlockType === 'TABLE')
-    tableBlocks.forEach((tableBlock: any) => {
+    for (const tableBlock of tableBlocks) {
       const table = this.extractTableFromBlock(tableBlock, blocks)
-      if (table.rows.length > 0) {
+      if (table.headers.length > 0 || table.rows.length > 0) {
         tables.push(table)
       }
-    })
+    }
     
-    // Process key-value pairs
-    const keyValueBlocks = blocks.filter((block: any) => block.BlockType === 'KEY_VALUE_SET')
-    const pairs = this.extractKeyValuePairs(keyValueBlocks, blocks)
-    keyValuePairs.push(...pairs)
+    // Extract key-value pairs
+    const keyValueBlocks = blocks.filter((block: any) => 
+      block.BlockType === 'KEY_VALUE_SET' && block.EntityTypes?.includes('KEY')
+    )
     
-    // Calculate confidence
-    const allConfidences = [
-      ...lineBlocks.map((b: any) => b.Confidence || 0),
-      ...tableBlocks.map((b: any) => b.Confidence || 0),
-      ...keyValueBlocks.map((b: any) => b.Confidence || 0),
-    ]
+    for (const kvBlock of keyValueBlocks) {
+      const pair = this.extractKeyValuePair(kvBlock, blocks)
+      if (pair) {
+        keyValuePairs.push(pair)
+      }
+    }
     
-    const confidence = allConfidences.length > 0 
-      ? allConfidences.reduce((sum, conf) => sum + conf, 0) / allConfidences.length / 100
-      : 0
-    
-    // Classify document
+    const overallConfidence = this.calculateConfidence(blocks)
     const documentType = this.classifyDocument(extractedText)
     
+    console.log(`Extracted: ${extractedText.length} chars, ${tables.length} tables, ${keyValuePairs.length} KV pairs`)
+    
     return {
-      extractedText: extractedText.trim(),
+      extractedText,
       tables,
       keyValuePairs,
       documentType,
-      overallConfidence: confidence,
+      overallConfidence,
+      processingMethod: 'textract_analyze'
+    }
+  }
+
+  private processDetectResponse(response: any): TextractResult {
+    const blocks = response.Blocks || []
+    const textBlocks = blocks.filter((block: any) => block.BlockType === 'LINE')
+    const extractedText = textBlocks.map((block: any) => block.Text || '').join('\n')
+    
+    const overallConfidence = this.calculateConfidence(blocks)
+    const documentType = this.classifyDocument(extractedText)
+    
+    console.log(`Extracted (detect mode): ${extractedText.length} chars`)
+    
+    return {
+      extractedText,
+      tables: [],
+      keyValuePairs: [],
+      documentType,
+      overallConfidence,
+      processingMethod: 'textract_detect'
     }
   }
 
   private extractTableFromBlock(tableBlock: any, allBlocks: any[]): { headers: string[]; rows: string[][]; confidence: number } {
-    const rows: string[][] = []
-    const relationships = tableBlock.Relationships || []
+    const cells = allBlocks.filter((block: any) => 
+      block.BlockType === 'CELL' && 
+      block.Relationships?.some((rel: any) => rel.Type === 'CHILD' && tableBlock.Id === rel.Ids?.[0])
+    )
     
-    const childRelationship = relationships.find((rel: any) => rel.Type === 'CHILD')
-    if (!childRelationship) {
+    if (cells.length === 0) {
       return { headers: [], rows: [], confidence: 0 }
     }
     
-    const cellIds = childRelationship.Ids || []
-    const cells = allBlocks.filter((block: any) => 
-      cellIds.includes(block.Id) && block.BlockType === 'CELL'
-    )
+    // Group cells by row and column
+    const cellGrid: { [row: number]: { [col: number]: string } } = {}
+    let maxRow = 0
+    let maxCol = 0
     
-    // Group cells by row
-    const cellsByRow: { [key: number]: any[] } = {}
-    cells.forEach((cell: any) => {
-      const rowIndex = cell.RowIndex - 1
-      if (!cellsByRow[rowIndex]) {
-        cellsByRow[rowIndex] = []
+    for (const cell of cells) {
+      const rowIndex = (cell.RowIndex || 1) - 1
+      const colIndex = (cell.ColumnIndex || 1) - 1
+      
+      maxRow = Math.max(maxRow, rowIndex)
+      maxCol = Math.max(maxCol, colIndex)
+      
+      if (!cellGrid[rowIndex]) cellGrid[rowIndex] = {}
+      cellGrid[rowIndex][colIndex] = this.extractTextFromCell(cell, allBlocks)
+    }
+    
+    // Convert to headers and rows
+    const headers: string[] = []
+    const rows: string[][] = []
+    
+    // First row as headers
+    if (cellGrid[0]) {
+      for (let col = 0; col <= maxCol; col++) {
+        headers.push(cellGrid[0][col] || '')
       }
-      cellsByRow[rowIndex][cell.ColumnIndex - 1] = cell
-    })
+    }
     
-    // Extract text from each cell
-    Object.keys(cellsByRow).sort((a, b) => parseInt(a) - parseInt(b)).forEach(rowKey => {
-      const rowCells = cellsByRow[parseInt(rowKey)]
+    // Remaining rows as data
+    for (let row = 1; row <= maxRow; row++) {
+      if (cellGrid[row]) {
       const rowData: string[] = []
-      
-      rowCells.forEach((cell, colIndex) => {
-        if (cell) {
-          const cellText = this.extractTextFromCell(cell, allBlocks)
-          rowData[colIndex] = cellText
-        } else {
-          rowData[colIndex] = ''
+        for (let col = 0; col <= maxCol; col++) {
+          rowData.push(cellGrid[row][col] || '')
         }
-      })
-      
       rows.push(rowData)
-    })
+      }
+    }
     
-    const headers = rows.length > 0 ? rows[0] : []
-    const dataRows = rows.slice(1)
-    const confidence = tableBlock.Confidence || 0
+    const confidence = cells.reduce((sum: number, cell: any) => sum + (cell.Confidence || 0), 0) / cells.length
     
-    return { headers, rows: dataRows, confidence: confidence / 100 }
+    return { headers, rows, confidence: confidence / 100 }
   }
 
   private extractTextFromCell(cell: any, allBlocks: any[]): string {
-    const relationships = cell.Relationships || []
-    const childRelationship = relationships.find((rel: any) => rel.Type === 'CHILD')
+    if (!cell.Relationships) return ''
     
-    if (!childRelationship) {
-      return ''
-    }
+    const childIds = cell.Relationships
+      .filter((rel: any) => rel.Type === 'CHILD')
+      .flatMap((rel: any) => rel.Ids || [])
     
-    const wordIds = childRelationship.Ids || []
-    const words = allBlocks.filter((block: any) => 
-      wordIds.includes(block.Id) && block.BlockType === 'WORD'
-    )
-    
-    return words.map((word: any) => word.Text || '').join(' ')
+    const childBlocks = allBlocks.filter((block: any) => childIds.includes(block.Id))
+    return childBlocks.map((block: any) => block.Text || '').join(' ')
   }
 
-  private extractKeyValuePairs(keyValueBlocks: any[], allBlocks: any[]): Array<{ key: string; value: string; confidence: number }> {
-    const pairs: Array<{ key: string; value: string; confidence: number }> = []
+  private extractKeyValuePair(keyBlock: any, allBlocks: any[]): { key: string; value: string; confidence: number } | null {
+    const keyText = this.extractTextFromBlock(keyBlock, allBlocks)
     
-    const keyBlocks = keyValueBlocks.filter((block: any) => 
-      block.EntityTypes && block.EntityTypes.includes('KEY')
-    )
+    // Find corresponding value block
+    const valueRelation = keyBlock.Relationships?.find((rel: any) => rel.Type === 'VALUE')
+    if (!valueRelation?.Ids?.[0]) return null
     
-    keyBlocks.forEach((keyBlock: any) => {
-      const keyText = this.extractTextFromKeyValueBlock(keyBlock, allBlocks)
-      
-      const relationships = keyBlock.Relationships || []
-      const valueRelationship = relationships.find((rel: any) => rel.Type === 'VALUE')
-      
-      if (valueRelationship && valueRelationship.Ids) {
-        const valueBlockId = valueRelationship.Ids[0]
-        const valueBlock = allBlocks.find((block: any) => block.Id === valueBlockId)
-        
-        if (valueBlock) {
-          const valueText = this.extractTextFromKeyValueBlock(valueBlock, allBlocks)
-          const confidence = Math.min(keyBlock.Confidence || 0, valueBlock.Confidence || 0) / 100
-          
-          pairs.push({
-            key: keyText,
-            value: valueText,
-            confidence,
-          })
-        }
-      }
-    })
+    const valueBlock = allBlocks.find((block: any) => block.Id === valueRelation.Ids[0])
+    if (!valueBlock) return null
     
-    return pairs
+    const valueText = this.extractTextFromBlock(valueBlock, allBlocks)
+    const confidence = ((keyBlock.Confidence || 0) + (valueBlock.Confidence || 0)) / 200
+    
+    return {
+      key: keyText.trim(),
+      value: valueText.trim(),
+      confidence
+    }
   }
 
-  private extractTextFromKeyValueBlock(block: any, allBlocks: any[]): string {
-    const relationships = block.Relationships || []
-    const childRelationship = relationships.find((rel: any) => rel.Type === 'CHILD')
+  private extractTextFromBlock(block: any, allBlocks: any[]): string {
+    if (!block.Relationships) return block.Text || ''
     
-    if (!childRelationship) {
-      return ''
-    }
+    const childIds = block.Relationships
+      .filter((rel: any) => rel.Type === 'CHILD')
+      .flatMap((rel: any) => rel.Ids || [])
     
-    const childIds = childRelationship.Ids || []
-    const childBlocks = allBlocks.filter((b: any) => childIds.includes(b.Id))
+    const childBlocks = allBlocks.filter((block: any) => childIds.includes(block.Id))
+    return childBlocks.map((block: any) => block.Text || '').join(' ')
+  }
+
+  private calculateConfidence(blocks: any[]): number {
+    const confidenceBlocks = blocks.filter((block: any) => block.Confidence !== undefined)
+    if (confidenceBlocks.length === 0) return 0.7
     
-    return childBlocks
-      .filter((b: any) => b.BlockType === 'WORD')
-      .map((b: any) => b.Text || '')
-      .join(' ')
+    const totalConfidence = confidenceBlocks.reduce((sum: number, block: any) => sum + block.Confidence, 0)
+    return totalConfidence / (confidenceBlocks.length * 100)
   }
 
   private classifyDocument(text: string): 'invoice' | 'receipt' | 'utility_bill' | 'statement' | 'other' {
     const lowerText = text.toLowerCase()
     
-    if (lowerText.includes('invoice') || lowerText.includes('bill to')) {
-      return 'invoice'
-    }
-    
-    if (lowerText.includes('receipt') || lowerText.includes('thank you')) {
-      return 'receipt'
-    }
-    
-    if (lowerText.includes('utility') || lowerText.includes('electric') || lowerText.includes('kwh')) {
-      return 'utility_bill'
-    }
-    
-    if (lowerText.includes('statement')) {
-      return 'statement'
-    }
+    if (lowerText.includes('invoice') || lowerText.includes('factuur')) return 'invoice'
+    if (lowerText.includes('receipt') || lowerText.includes('bon')) return 'receipt'
+    if (lowerText.includes('utility') || lowerText.includes('energy') || lowerText.includes('gas') || lowerText.includes('electricity')) return 'utility_bill'
+    if (lowerText.includes('statement') || lowerText.includes('overzicht')) return 'statement'
     
     return 'other'
   }
+}
 
-  private processDetectTextResponse(response: any): TextractResult {
-    const blocks = response.Blocks || []
-    let extractedText = ''
+class GPT4CarbonProcessor {
+  private openaiKey: string
+  private maxTokensPerChunk = 6000 // Conservative limit for GPT-4 Turbo
+  
+  constructor(openaiKey: string) {
+    this.openaiKey = openaiKey
+  }
+
+  async processTextractResult(textractResult: TextractResult): Promise<CarbonEntry[]> {
+    console.log('=== GPT-4 CARBON PROCESSING ===')
     
-    // Extract text from LINE blocks for DetectDocumentText
-    const lineBlocks = blocks.filter((block: any) => block.BlockType === 'LINE')
-    lineBlocks.forEach((block: any) => {
-      if (block.Text) {
-        extractedText += block.Text + '\n'
+    // Create chunks from Textract result
+    const chunks = this.createIntelligentChunks(textractResult)
+    console.log(`Created ${chunks.length} intelligent chunks`)
+    
+    const allEntries: CarbonEntry[] = []
+    
+    // Process each chunk
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i]
+      console.log(`Processing chunk ${i + 1}/${chunks.length} (${chunk.tokenCount} tokens)`)
+      
+      try {
+        const entries = await this.processChunk(chunk, textractResult.documentType)
+        allEntries.push(...entries)
+        console.log(`Chunk ${i + 1} extracted ${entries.length} entries`)
+      } catch (error) {
+        console.error(`Error processing chunk ${i + 1}:`, error.message)
+        // Continue with other chunks
+      }
+    }
+    
+    // Deduplicate and validate entries
+    const uniqueEntries = this.deduplicateEntries(allEntries)
+    console.log(`Final result: ${uniqueEntries.length} unique carbon entries`)
+    
+    return uniqueEntries
+  }
+
+  private createIntelligentChunks(textractResult: TextractResult): TextChunk[] {
+    const chunks: TextChunk[] = []
+    
+    // Chunk 1: Main text content
+    if (textractResult.extractedText.length > 0) {
+      const textChunks = this.chunkText(textractResult.extractedText, 4000)
+      textChunks.forEach(text => {
+        chunks.push({
+          content: text,
+          type: 'text',
+          tokenCount: this.estimateTokens(text)
+        })
+      })
+    }
+    
+    // Chunk 2: Tables (each table as separate chunk)
+    textractResult.tables.forEach((table, index) => {
+      const tableText = this.formatTableForGPT(table)
+      if (tableText.length > 0) {
+        chunks.push({
+          content: tableText,
+          type: 'table',
+          metadata: { tableIndex: index, confidence: table.confidence },
+          tokenCount: this.estimateTokens(tableText)
+        })
       }
     })
     
-    // Calculate confidence
-    const allConfidences = lineBlocks.map((b: any) => b.Confidence || 0)
-    const confidence = allConfidences.length > 0 
-      ? allConfidences.reduce((sum, conf) => sum + conf, 0) / allConfidences.length / 100
-      : 0
+    // Chunk 3: Key-value pairs (grouped)
+    if (textractResult.keyValuePairs.length > 0) {
+      const kvText = this.formatKeyValuePairsForGPT(textractResult.keyValuePairs)
+      chunks.push({
+        content: kvText,
+        type: 'key_value',
+        tokenCount: this.estimateTokens(kvText)
+      })
+    }
     
-    // Classify document
-    const documentType = this.classifyDocument(extractedText)
+    return chunks.filter(chunk => chunk.tokenCount > 10) // Filter out tiny chunks
+  }
+
+  private chunkText(text: string, maxChars: number): string[] {
+    if (text.length <= maxChars) return [text]
     
-    return {
-      extractedText: extractedText.trim(),
-      tables: [], // DetectDocumentText doesn't extract tables
-      keyValuePairs: [], // DetectDocumentText doesn't extract key-value pairs
-      documentType,
-      overallConfidence: confidence,
-    }
-  }
-
-  private extractBasicTextFromPDF(documentBytes: Uint8Array): string {
-    try {
-      // Convert PDF bytes to string for basic text extraction
-      const pdfString = Array.from(documentBytes)
-        .map(byte => String.fromCharCode(byte))
-        .join('')
-      
-      // Look for text content between stream objects
-      const textMatches = []
-      
-      // Pattern 1: Look for text in stream objects
-      const streamRegex = /stream\s*(.*?)\s*endstream/gs
-      let match
-      while ((match = streamRegex.exec(pdfString)) !== null) {
-        const streamContent = match[1]
-        
-        // Look for readable text (letters, numbers, common punctuation)
-        const readableText = streamContent.match(/[A-Za-z0-9\s\.,;:!?\-€$%()]+/g)
-        if (readableText) {
-          textMatches.push(...readableText)
-        }
+    const chunks: string[] = []
+    const sentences = text.split(/[.!?]\s+/)
+    let currentChunk = ''
+    
+    for (const sentence of sentences) {
+      if ((currentChunk + sentence).length > maxChars && currentChunk.length > 0) {
+        chunks.push(currentChunk.trim())
+        currentChunk = sentence
+      } else {
+        currentChunk += (currentChunk ? '. ' : '') + sentence
       }
-      
-      // Pattern 2: Look for text objects with Tj or TJ operators
-      const textObjectRegex = /\((.*?)\)\s*Tj/g
-      while ((match = textObjectRegex.exec(pdfString)) !== null) {
-        const text = match[1]
-        if (text && text.length > 1) {
-          textMatches.push(text)
-        }
-      }
-      
-      // Pattern 3: Look for text arrays with TJ operator
-      const textArrayRegex = /\[(.*?)\]\s*TJ/g
-      while ((match = textArrayRegex.exec(pdfString)) !== null) {
-        const textArray = match[1]
-        // Extract text from array format
-        const arrayTextMatches = textArray.match(/\((.*?)\)/g)
-        if (arrayTextMatches) {
-          arrayTextMatches.forEach(arrayMatch => {
-            const text = arrayMatch.replace(/[()]/g, '')
-            if (text && text.length > 1) {
-              textMatches.push(text)
-            }
-          })
-        }
-      }
-      
-      // Clean and combine extracted text
-      const extractedText = textMatches
-        .filter(text => text && text.trim().length > 0)
-        .map(text => text.trim())
-        .join(' ')
-        .replace(/\s+/g, ' ') // Normalize whitespace
-        .trim()
-      
-      console.log(`Basic extraction found ${textMatches.length} text fragments`)
-      console.log(`Combined text length: ${extractedText.length}`)
-      
-      return extractedText
-      
-    } catch (error) {
-      console.error('Basic text extraction error:', error.message)
-      return ''
     }
-  }
-}
-
-async function processWithGPT4(textractResult: TextractResult, openaiKey: string): Promise<any> {
-  console.log('=== DEBUGGING GPT-4 PROCESSING ===')
-  console.log('Document Type:', textractResult.documentType)
-  console.log('Confidence:', textractResult.overallConfidence)
-  console.log('Extracted Text Length:', textractResult.extractedText.length)
-  console.log('Number of Tables:', textractResult.tables.length)
-  console.log('Number of Key-Value Pairs:', textractResult.keyValuePairs.length)
-  
-  // Log first 500 characters of extracted text
-  console.log('Extracted Text Preview:', textractResult.extractedText.substring(0, 500))
-  
-  // Log table details
-  textractResult.tables.forEach((table, index) => {
-    console.log(`Table ${index + 1} Headers:`, table.headers)
-    console.log(`Table ${index + 1} Row Count:`, table.rows.length)
-    if (table.rows.length > 0) {
-      console.log(`Table ${index + 1} First Row:`, table.rows[0])
+    
+    if (currentChunk.trim()) {
+      chunks.push(currentChunk.trim())
     }
-  })
-  
-  // Log key-value pairs
-  console.log('Key-Value Pairs:', textractResult.keyValuePairs.slice(0, 10)) // First 10 pairs
-  
-  const prompt = `You are a Carbon Accounting Data Extraction Expert. Analyze this Textract extraction and extract carbon accounting entries.
-
-DOCUMENT TYPE: ${textractResult.documentType}
-CONFIDENCE: ${textractResult.overallConfidence}
-
-EXTRACTED TEXT:
-${textractResult.extractedText}
-
-TABLES:
-${textractResult.tables.map((table, index) => 
-  `Table ${index + 1}:\nHeaders: ${table.headers.join(' | ')}\n${table.rows.map(row => row.join(' | ')).join('\n')}`
-).join('\n\n')}
-
-KEY-VALUE PAIRS:
-${textractResult.keyValuePairs.map(pair => `${pair.key}: ${pair.value}`).join('\n')}
-
-TASK: Extract carbon accounting entries from this document. Look for:
-
-FOR FUEL RECEIPTS (Gas Stations):
-- Fuel types: "Euro 95", "E10", "Diesel", "Benzine", "Gasoil", "Unleaded"
-- Volume data in liters (L), gallons, or similar units
-- Purchase dates (look for date patterns like DD-MM-YY, DD/MM/YYYY)
-- Fuel station names (Shell, BP, Esso, ABS, Total, etc.)
-- Individual transaction lines with volume and cost
-- Each fuel purchase = ONE Scope 1 emission entry
-
-FOR UTILITY BILLS:
-- Energy consumption (kWh, MWh, therms, m³ gas)
-- Billing periods and dates
-- Supplier/utility company names
-- Costs and currencies
-- Meter readings and consumption amounts
-
-FOR INVOICES/RECEIPTS:
-- Fuel purchases (liters, gallons)
-- Travel expenses (km, miles)
-- Material purchases
-- Service costs
-
-EXTRACTION RULES:
-1. Create ONE entry per fuel purchase transaction or consumption period
-2. For fuel receipts: Extract EACH individual fuel purchase as a separate entry
-3. Use the transaction date as the activity date
-4. For consumption data, extract the actual usage amount (not cumulative readings)
-5. Classify emissions scope:
-   - Scope 1: Fuel combustion (gasoline, diesel, natural gas)
-   - Scope 2: Electricity consumption
-   - Scope 3: Business travel, purchased materials
-6. If no clear carbon data exists, return an empty array []
-
-FUEL RECEIPT EXAMPLE:
-If you see fuel purchases like:
-- Date: 05-04-25, Euro 95 E10, 13.60 L, €25.13
-- Date: 06-04-25, Euro 95 E10, 12.84 L, €23.74
-
-Extract as:
-[
-  {
-    "date": "2025-04-05",
-    "activity_description": "Fuel purchase - Euro 95 E10",
-    "quantity": 13.60,
-    "unit": "liters",
-    "ghg_category": "Scope 1",
-    "supplier_vendor": "ABS",
-    "cost": 25.13,
-    "currency": "EUR",
-    "notes": "Gasoline purchase for vehicle",
-    "confidence": 0.9
-  },
-  {
-    "date": "2025-04-06", 
-    "activity_description": "Fuel purchase - Euro 95 E10",
-    "quantity": 12.84,
-    "unit": "liters", 
-    "ghg_category": "Scope 1",
-    "supplier_vendor": "ABS",
-    "cost": 23.74,
-    "currency": "EUR",
-    "notes": "Gasoline purchase for vehicle",
-    "confidence": 0.9
+    
+    return chunks
   }
-]
 
-REQUIRED OUTPUT FORMAT - JSON array:
-[
-  {
-    "date": "YYYY-MM-DD",
-    "activity_description": "Clear description of the emission activity",
-    "quantity": numeric_value,
-    "unit": "liters|kWh|MWh|m³|km|kg|etc",
-    "ghg_category": "Scope 1|Scope 2|Scope 3",
-    "supplier_vendor": "Company name",
-    "cost": numeric_value_or_null,
-    "currency": "EUR|USD|etc",
-    "notes": "Additional context",
-    "confidence": 0.0_to_1.0
+  private formatTableForGPT(table: { headers: string[]; rows: string[][]; confidence: number }): string {
+    if (table.headers.length === 0 && table.rows.length === 0) return ''
+    
+    let formatted = `TABLE (Confidence: ${(table.confidence * 100).toFixed(1)}%):\n`
+    
+    if (table.headers.length > 0) {
+      formatted += `Headers: ${table.headers.join(' | ')}\n`
+    }
+    
+    table.rows.forEach((row, index) => {
+      formatted += `Row ${index + 1}: ${row.join(' | ')}\n`
+    })
+    
+    return formatted
   }
-]
 
-IMPORTANT: Return ONLY the JSON array. If no carbon accounting data is found, return []`
+  private formatKeyValuePairsForGPT(pairs: Array<{ key: string; value: string; confidence: number }>): string {
+    let formatted = 'KEY-VALUE PAIRS:\n'
+    pairs.forEach(pair => {
+      formatted += `${pair.key}: ${pair.value} (${(pair.confidence * 100).toFixed(1)}%)\n`
+    })
+    return formatted
+  }
 
-  console.log('=== SENDING TO GPT-4 ===')
-  console.log('Prompt length:', prompt.length)
+  private estimateTokens(text: string): number {
+    // Rough estimation: 1 token ≈ 4 characters for English text
+    return Math.ceil(text.length / 4)
+  }
+
+  private async processChunk(chunk: TextChunk, documentType: string): Promise<CarbonEntry[]> {
+    const prompt = this.createOptimizedPrompt(chunk, documentType)
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${openaiKey}`,
+        'Authorization': `Bearer ${this.openaiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4',
+        model: 'gpt-4-turbo-preview', // Use GPT-4 Turbo for better performance
       messages: [
         { 
           role: 'system', 
-          content: 'You are a carbon accounting expert. Extract emission-related data from documents. Return only valid JSON arrays. If no carbon accounting data exists, return [].' 
+            content: 'You are a carbon accounting expert. Extract emission-related data and return ONLY valid JSON arrays. If no carbon data exists, return [].' 
         },
         { role: 'user', content: prompt }
       ],
       temperature: 0.1,
       max_tokens: 2000,
+        response_format: { type: 'json_object' }
     }),
   })
 
   if (!response.ok) {
-    console.error('GPT-4 API Error:', response.status, response.statusText)
-    throw new Error(`OpenAI API error: ${response.statusText}`)
+      const errorText = await response.text()
+      throw new Error(`OpenAI API error: ${response.status} ${errorText}`)
   }
 
   const data = await response.json()
-  const content = data.choices[0]?.message?.content || '[]'
-  
-  console.log('=== GPT-4 RESPONSE ===')
-  console.log('Full GPT-4 response:', content)
-  console.log('Response length:', content.length)
-  
-  try {
-    // Clean the response to extract JSON
-    let jsonContent = content.trim()
+    const content = data.choices[0]?.message?.content || '{}'
     
-    // Remove markdown code blocks if present
-    if (jsonContent.startsWith('```json')) {
-      jsonContent = jsonContent.replace(/```json\n?/, '').replace(/\n?```$/, '')
-    } else if (jsonContent.startsWith('```')) {
-      jsonContent = jsonContent.replace(/```\n?/, '').replace(/\n?```$/, '')
-    }
-    
-    console.log('Cleaned JSON content:', jsonContent)
-    
-    const parsed = JSON.parse(jsonContent)
-    
-    // Ensure we return an array
+    try {
+      const parsed = JSON.parse(content)
+      
+      // Handle different response formats
     if (Array.isArray(parsed)) {
-      console.log('Parsed array with', parsed.length, 'entries')
-      return parsed
+        return this.validateEntries(parsed)
     } else if (parsed.entries && Array.isArray(parsed.entries)) {
-      console.log('Parsed object with entries array containing', parsed.entries.length, 'entries')
-      return parsed.entries
+        return this.validateEntries(parsed.entries)
+      } else if (parsed.carbon_entries && Array.isArray(parsed.carbon_entries)) {
+        return this.validateEntries(parsed.carbon_entries)
     } else {
-      console.log('GPT-4 returned non-array response, returning empty array')
+        console.log('No carbon entries found in chunk')
       return []
     }
   } catch (error) {
     console.error('Failed to parse GPT-4 response:', content)
-    console.error('Parse error:', error)
     return []
+    }
+  }
+
+  private createOptimizedPrompt(chunk: TextChunk, documentType: string): string {
+    return `Extract carbon accounting data from this ${chunk.type} content from a ${documentType}.
+
+CONTENT:
+${chunk.content}
+
+EXTRACTION RULES:
+1. Look for fuel purchases, energy consumption, travel expenses, material purchases
+2. Each transaction/consumption period = ONE entry
+3. For fuel receipts: Extract EACH individual purchase separately
+4. Use actual consumption amounts (not cumulative readings)
+5. Classify GHG scope correctly:
+   - Scope 1: Direct fuel combustion (gasoline, diesel, natural gas)
+   - Scope 2: Purchased electricity, steam, heating/cooling
+   - Scope 3: Business travel, purchased materials, waste
+
+REQUIRED JSON FORMAT:
+{
+  "carbon_entries": [
+    {
+      "date": "YYYY-MM-DD",
+      "activity_description": "Clear description",
+      "quantity": numeric_value,
+      "unit": "liters|kWh|MWh|m³|km|kg",
+      "ghg_category": "Scope 1|Scope 2|Scope 3",
+      "supplier_vendor": "Company name or null",
+      "cost": numeric_value_or_null,
+      "currency": "EUR|USD|etc or null",
+      "notes": "Additional context or null",
+      "confidence": 0.0_to_1.0
+    }
+  ]
+}
+
+Return ONLY the JSON object. If no carbon data found, return {"carbon_entries": []}`
+  }
+
+  private validateEntries(entries: any[]): CarbonEntry[] {
+    return entries
+      .filter(entry => this.isValidEntry(entry))
+      .map(entry => this.normalizeEntry(entry))
+  }
+
+  private isValidEntry(entry: any): boolean {
+    return (
+      entry &&
+      typeof entry === 'object' &&
+      entry.date &&
+      entry.activity_description &&
+      typeof entry.quantity === 'number' &&
+      entry.quantity > 0 &&
+      entry.unit &&
+      ['Scope 1', 'Scope 2', 'Scope 3'].includes(entry.ghg_category)
+    )
+  }
+
+  private normalizeEntry(entry: any): CarbonEntry {
+    return {
+      date: this.normalizeDate(entry.date),
+      activity_description: String(entry.activity_description).trim(),
+      quantity: Number(entry.quantity),
+      unit: String(entry.unit).trim(),
+      ghg_category: entry.ghg_category,
+      supplier_vendor: entry.supplier_vendor ? String(entry.supplier_vendor).trim() : undefined,
+      cost: entry.cost ? Number(entry.cost) : undefined,
+      currency: entry.currency ? String(entry.currency).trim() : undefined,
+      notes: entry.notes ? String(entry.notes).trim() : undefined,
+      confidence: Math.min(Math.max(Number(entry.confidence) || 0.7, 0), 1)
+    }
+  }
+
+  private normalizeDate(dateStr: string): string {
+    try {
+      const date = new Date(dateStr)
+      if (isNaN(date.getTime())) {
+        // Try parsing common European formats
+        const parts = dateStr.split(/[-/.]/)
+        if (parts.length === 3) {
+          // Assume DD-MM-YYYY or DD/MM/YYYY
+          const day = parseInt(parts[0])
+          const month = parseInt(parts[1])
+          const year = parseInt(parts[2])
+          
+          if (year > 1900 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+            return new Date(year, month - 1, day).toISOString().split('T')[0]
+          }
+        }
+        throw new Error('Invalid date format')
+      }
+      return date.toISOString().split('T')[0]
+    } catch {
+      // Fallback to current date if parsing fails
+      return new Date().toISOString().split('T')[0]
+    }
+  }
+
+  private deduplicateEntries(entries: CarbonEntry[]): CarbonEntry[] {
+    const seen = new Set<string>()
+    return entries.filter(entry => {
+      const key = `${entry.date}-${entry.activity_description}-${entry.quantity}-${entry.unit}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
   }
 }
 
@@ -728,60 +640,55 @@ serve(async (req) => {
     )
 
     const requestData: ProcessAIDataRequest = await req.json()
-    console.log('Processing AI data request:', requestData.operation)
+    console.log('=== ENHANCED AI PROCESSING REQUEST ===')
+    console.log('Operation:', requestData.operation)
+    console.log('Enhanced processing:', requestData.enhanced_processing)
 
     if (requestData.operation === 'extract_from_pdf' && requestData.fileUrl) {
-      let textractResult: TextractResult | null = null
-      let carbonEntries: any[] = []
-
-      // Always use Textract for PDF processing - no fallback
-      if (requestData.enhanced_processing) {
-        console.log('=== ATTEMPTING TEXTRACT INITIALIZATION ===')
-        console.log('AWS_ACCESS_KEY_ID exists:', !!Deno.env.get('AWS_ACCESS_KEY_ID'))
-        console.log('AWS_SECRET_ACCESS_KEY exists:', !!Deno.env.get('AWS_SECRET_ACCESS_KEY'))
-        console.log('AWS_REGION:', Deno.env.get('AWS_REGION'))
-        
-        const textractService = new AWSTextractService()
-        console.log('✅ Textract service created successfully')
-        
-        textractResult = await textractService.processPDFFromURL(requestData.fileUrl)
-        console.log('✅ Textract extraction successful')
-      } else {
-        // If enhanced processing is disabled, throw error - we require Textract
-        throw new Error('Enhanced processing with Textract is required for PDF processing')
-      }
-
-      // Use GPT-4 to interpret the Textract extracted data
+      // Validate environment
       const openaiKey = Deno.env.get('OPENAI_API_KEY')
       if (!openaiKey) {
         throw new Error('OpenAI API key not configured')
       }
 
-      if (textractResult) {
-        // Process Textract results with GPT-4
-        carbonEntries = await processWithGPT4(textractResult, openaiKey)
-      } else {
-        throw new Error('Textract processing failed - no extracted data available')
-      }
+      // Initialize services
+      const textractService = new EnhancedAWSTextractService()
+      const gpt4Processor = new GPT4CarbonProcessor(openaiKey)
 
-      // Format response
+      // Step 1: Extract with Textract
+      console.log('Step 1: Textract extraction...')
+      const textractResult = await textractService.processPDFFromURL(requestData.fileUrl)
+      
+      // Step 2: Process with GPT-4 Turbo
+      console.log('Step 2: GPT-4 processing...')
+      const carbonEntries = await gpt4Processor.processTextractResult(textractResult)
+
+      // Step 3: Format response
       const result = {
-        document_type: textractResult?.documentType || 'other',
-        extraction_confidence: textractResult?.overallConfidence || 0.7,
+        document_type: textractResult.documentType,
+        extraction_confidence: textractResult.overallConfidence,
         entries: carbonEntries,
-        warnings: [],
+        warnings: carbonEntries.length === 0 ? ['No carbon accounting data found in document'] : [],
         suggestions: [],
         metadata: {
-          extractionMethod: 'textract+gpt4',
-          processingTime: Date.now()
+          extractionMethod: `${textractResult.processingMethod}+gpt4-turbo`,
+          processingTime: Date.now(),
+          chunksProcessed: carbonEntries.length > 0 ? 'multiple' : 'none',
+          textractTables: textractResult.tables.length,
+          textractKeyValues: textractResult.keyValuePairs.length
         }
       }
+
+      console.log('=== PROCESSING COMPLETE ===')
+      console.log(`Extracted ${carbonEntries.length} carbon entries`)
+      console.log(`Document type: ${textractResult.documentType}`)
+      console.log(`Confidence: ${(textractResult.overallConfidence * 100).toFixed(1)}%`)
 
       return new Response(
         JSON.stringify({
           success: true,
           data: JSON.stringify(result),
-          message: `Extracted ${carbonEntries.length} entries using Textract + GPT-4`
+          message: `Successfully extracted ${carbonEntries.length} carbon entries using enhanced Textract + GPT-4 Turbo`
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
@@ -793,12 +700,16 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Process AI data error:', error)
+    console.error('=== PROCESSING ERROR ===')
+    console.error('Error:', error.message)
+    console.error('Stack:', error.stack)
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
         message: error.message || 'Processing failed',
-        error: error.toString()
+        error: error.toString(),
+        timestamp: new Date().toISOString()
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

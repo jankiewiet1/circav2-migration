@@ -64,7 +64,7 @@ async function calculateCarbonFootprint(
   // Fetch data entries
   const { data: dataEntries, error: entriesError } = await supabase
     .from('data_entry')
-    .select('*, emission_calc_climatiq(*)')
+    .select('*, emission_calc_openai(*)')
     .in('id', dataEntryIds);
 
   if (entriesError) {

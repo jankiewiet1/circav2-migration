@@ -3,6 +3,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Dashboard from "@/pages/dashboard";
 import Reports from "@/pages/Reports";
 import DataUpload from "@/pages/DataUpload";
+import DataTraceability from "@/pages/DataTraceability";
 import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
 import CompanyManage from "@/pages/company/CompanyManage";
@@ -31,6 +32,14 @@ export const mainRoutes = (
       element={
         <ProtectedRoute>
           <DataUpload />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/data-traceability"
+      element={
+        <ProtectedRoute>
+          <DataTraceability />
         </ProtectedRoute>
       }
     />

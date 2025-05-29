@@ -19,4 +19,13 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  define: {
+    // Fix for OpenAI client in browser
+    'process.env': {},
+    'process.env.NODE_ENV': JSON.stringify(mode),
+    'process.env.VITE_OPENAI_API_KEY': JSON.stringify(process.env.VITE_OPENAI_API_KEY || ''),
+    'process.env.VITE_OPENAI_ASSISTANT_ID': JSON.stringify(process.env.VITE_OPENAI_ASSISTANT_ID || ''),
+    'process.env.OPENAI_API_KEY': JSON.stringify(process.env.OPENAI_API_KEY || ''),
+    'process.env.OPENAI_ASSISTANT_ID': JSON.stringify(process.env.OPENAI_ASSISTANT_ID || ''),
+  },
 }));

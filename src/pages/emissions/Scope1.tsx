@@ -1,9 +1,9 @@
 import React from 'react';
 import { MainLayout } from '@/components/MainLayout';
-import { Scope1Dashboard } from '@/components/emissions/Scope1Dashboard';
+import Scope1Dashboard from '@/components/emissions/Scope1Dashboard';
 import { useCompany } from '@/contexts/CompanyContext';
 import { EmissionCalculationStatus } from '@/components/emissions/EmissionCalculationStatus';
-import { useScopeEntries, EmissionEntryWithCalculation } from '@/hooks/useScopeEntries';
+import { useScopeEntries } from '@/hooks/useScopeEntries';
 
 export default function Scope1() {
   const { company } = useCompany();
@@ -29,7 +29,7 @@ export default function Scope1() {
         <Scope1Dashboard 
           entries={entries}
           loading={loading}
-          error={error || ''}
+          error={error}
           refetch={refetch}
         />
       </div>

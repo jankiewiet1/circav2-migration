@@ -245,7 +245,7 @@ export class ClimatiqEnergyService {
     const data = calculationMethod === 'location' ? response.location : response.market;
     
     const { data: result, error } = await supabase
-      .from('emission_calc_climatiq')
+      .from('emission_calc_openai')
       .insert({
         company_id: companyId,
         entry_id: entryId,
@@ -303,7 +303,7 @@ export class ClimatiqEnergyService {
     response: FuelResponse
   ): Promise<string> {
     const { data: result, error } = await supabase
-      .from('emission_calc_climatiq')
+      .from('emission_calc_openai')
       .insert({
         company_id: companyId,
         entry_id: entryId,
@@ -359,7 +359,7 @@ export class ClimatiqEnergyService {
     const data = response.estimates;
     
     const { data: result, error } = await supabase
-      .from('emission_calc_climatiq')
+      .from('emission_calc_openai')
       .insert({
         company_id: companyId,
         entry_id: entryId,
@@ -474,7 +474,7 @@ export class ClimatiqEnergyService {
     energyType?: 'electricity' | 'fuel' | 'heat_steam'
   ): Promise<EnergyCalculationResult[]> {
     let query = supabase
-      .from('emission_calc_climatiq')
+      .from('emission_calc_openai')
       .select('*')
       .eq('company_id', companyId)
       .not('activity_data', 'is', null)

@@ -16,6 +16,10 @@ CREATE TABLE IF NOT EXISTS public.leads (
 -- Add RLS policies for the leads table
 ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist and recreate them
+DROP POLICY IF EXISTS "Enable read access for all authenticated users" ON public.leads;
+DROP POLICY IF EXISTS "Enable insert access for lead submission" ON public.leads;
+
 -- Only allow authenticated users to view leads
 CREATE POLICY "Enable read access for all authenticated users" 
 ON public.leads FOR SELECT 
@@ -34,6 +38,9 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Drop existing trigger if it exists and recreate it
+DROP TRIGGER IF EXISTS set_updated_at ON public.leads;
 
 -- Create a trigger to automatically update updated_at
 CREATE TRIGGER set_updated_at

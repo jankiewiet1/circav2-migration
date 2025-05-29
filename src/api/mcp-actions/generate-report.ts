@@ -89,7 +89,7 @@ async function generateComplianceReport(
   // Get emissions data for the specified period
   const { data: dataEntries, error: entriesError } = await supabase
     .from('data_entry')
-    .select('*, emission_calc_climatiq(*)')
+    .select('*, emission_calc_openai(*)')
     .eq('company_id', membership.company_id)
     .gte('date', period.start)
     .lte('date', period.end)
@@ -129,7 +129,7 @@ async function generateComplianceReport(
  */
 function calculateTotalEmissions(dataEntries: any[]): number {
   return dataEntries.reduce((total, entry) => {
-    const emissions = entry.emission_calc_climatiq?.[0]?.total_emissions || 0;
+    const emissions = entry.emission_calc_openai?.[0]?.total_emissions || 0;
     return total + emissions;
   }, 0);
 }
@@ -215,7 +215,7 @@ function calculateScopeEmissions(dataEntries: any[], scope: string): number {
   return dataEntries
     .filter(entry => entry.ghg_category === scope)
     .reduce((total, entry) => {
-      const emissions = entry.emission_calc_climatiq?.[0]?.total_emissions || 0;
+      const emissions = entry.emission_calc_openai?.[0]?.total_emissions || 0;
       return total + emissions;
     }, 0);
 } 

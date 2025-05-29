@@ -1,42 +1,62 @@
 import OpenAI from 'openai';
 import { MCPContext, MCPActionType, MCPActionInputs, MCPActionOutputs } from '@/types/mcp';
 
-// Get API key from environment variables
-// In development, set VITE_OPENAI_API_KEY in your .env.local file
-// In production, set OPENAI_API_KEY in your deployment environment
-const OPENAI_API_KEY = 
-  import.meta.env.VITE_OPENAI_API_KEY || 
-  import.meta.env.OPENAI_API_KEY || 
-  '';
+// Get API key from environment variables with better browser compatibility
+const getApiKey = () => {
+  // Try different environment variable patterns
+  if (typeof window !== 'undefined') {
+    // Browser environment - use import.meta.env
+    return import.meta.env.VITE_OPENAI_API_KEY || '';
+  } else {
+    // Node.js environment (for scripts)
+    return process.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY || '';
+  }
+};
+
+const OPENAI_API_KEY = getApiKey();
 
 // Check if key is valid (handle both traditional and project-scoped keys)
-const isValidKey = (key) => {
+const isValidKey = (key: string) => {
   return key && 
     ((key.startsWith('sk-') && key.length > 30) || 
      (key.startsWith('sk-proj-') && key.length > 30));
 };
 
-// Initialize the OpenAI client
-export const openai = new OpenAI({
-  apiKey: OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true, // Only for development, in production use server-side API calls
-  baseURL: "https://api.openai.com/v1", // Explicitly set the base URL
-});
+// Initialize the OpenAI client with better error handling
+let openai: OpenAI;
+let isConfigured = false;
+
+try {
+  openai = new OpenAI({
+    apiKey: OPENAI_API_KEY || 'dummy-key', // Provide dummy key to prevent initialization errors
+    dangerouslyAllowBrowser: true, // Only for development, in production use server-side API calls
+    baseURL: "https://api.openai.com/v1", // Explicitly set the base URL
+  });
+  
+  isConfigured = isValidKey(OPENAI_API_KEY);
+} catch (error) {
+  console.warn('OpenAI client initialization failed:', error);
+  // Create a dummy client to prevent import errors
+  openai = {} as OpenAI;
+  isConfigured = false;
+}
 
 // Log OpenAI configuration for debugging (without showing the full key)
 console.log('OpenAI Client Config:', { 
-  keyStartsWith: OPENAI_API_KEY.substring(0, 10) + '...',
-  keyLength: OPENAI_API_KEY.length,
-  isConfigValid: isValidKey(OPENAI_API_KEY)
+  keyStartsWith: OPENAI_API_KEY ? OPENAI_API_KEY.substring(0, 10) + '...' : 'not set',
+  keyLength: OPENAI_API_KEY ? OPENAI_API_KEY.length : 0,
+  isConfigValid: isConfigured
 });
 
 // Check if API key is valid
-if (!isValidKey(OPENAI_API_KEY)) {
-  console.warn('OpenAI API key is missing or invalid. AI features will not work properly.');
-  console.warn('Please set VITE_OPENAI_API_KEY in your environment variables or .env.local file');
+if (!isConfigured && OPENAI_API_KEY) {
+  console.warn('OpenAI API key appears invalid. AI features will use demo mode.');
+} else if (!OPENAI_API_KEY) {
+  console.info('OpenAI API key not set. AI features will use demo mode.');
+  console.info('To enable real AI: Set VITE_OPENAI_API_KEY in your .env.local file');
 }
 
-export const isConfigured = isValidKey(OPENAI_API_KEY);
+export { openai, isConfigured };
 
 /**
  * MCP integration for OpenAI client

@@ -82,9 +82,9 @@ export type DataEntryUpdate = Partial<DataEntryInsert>;
 export interface DataEntryWithEmissions extends DataEntry {
   total_emissions?: number;
   emissions_unit?: string;
-  climatiq_activity_id?: string;
-  climatiq_factor_name?: string;
-  climatiq_source?: string;
+  activity_id?: string;
+  factor_name?: string;
+  source?: string;
 }
 
 // AI processing result for mapping fields
@@ -118,4 +118,18 @@ export interface AIDataExtractionResponse {
   unmapped_fields: string[];
   ambiguous_fields: AIFieldMapping[];
   requires_user_review: boolean;
+}
+
+export interface EmissionCalculationResult {
+  co2e: number;
+  co2e_unit: string;
+  source: string;
+  category: string;
+  calculatedAt: string;
+  scope: number;
+  activityData: {
+    [key: string]: any;
+  };
+  activity_id?: string;
+  factor_name?: string;
 } 

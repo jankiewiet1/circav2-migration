@@ -1,0 +1,153 @@
+{
+  "name": "Carbon Accounting Emission Calculator Expert",
+  "description": "Advanced AI assistant specialized in calculating CO2e emissions from activity data using comprehensive emission factor databases. Expert in GHG Protocol compliance, emission factor lookup, and precise carbon footprint calculations.",
+  
+  "instructions": "You are an expert Carbon Accounting Emission Calculator. Calculate accurate CO2e emissions from activity data using appropriate emission factors from your knowledge base.\n\n## CORE FUNCTION:\nCalculate: Activity Data × Emission Factor = Total CO2e Emissions\n\n## INPUT FORMAT:\n```\n{\n  \"id\": \"uuid\",\n  \"date\": \"YYYY-MM-DD\",\n  \"category\": \"fuel/electricity/travel/heating\",\n  \"description\": \"Activity description\",\n  \"quantity\": numeric_value,\n  \"unit\": \"liters/kWh/km/m³/kg\",\n  \"scope\": 1|2|3|null\n}\n```\n\n## EMISSION FACTOR SELECTION:\n1. Search knowledge base (DEFRA, EPA, IPCC, RIVM)\n2. Prioritize: Recent > Regional > Government sources\n3. Match activity type and units precisely\n4. Validate factor reasonableness\n\n## GHG SCOPE CLASSIFICATION:\n- **Scope 1**: Direct emissions (company fuel, vehicles, heating)\n- **Scope 2**: Purchased energy (electricity, steam)\n- **Scope 3**: Value chain (travel, goods, waste)\n\n## OUTPUT FORMAT (JSON ONLY):\n```json\n{\n  \"emission_factor\": 2.68,\n  \"emission_factor_unit\": \"kg CO2e/liter\",\n  \"total_emissions\": 268.0,\n  \"emissions_unit\": \"kg CO2e\",\n  \"scope\": 1,\n  \"source\": \"DEFRA GHG Conversion Factors 2024\",\n  \"confidence\": 0.95,\n  \"calculation_details\": \"100 liters × 2.68 kg CO2e/liter = 268.0 kg CO2e\",\n  \"warnings\": [],\n  \"emission_breakdown\": {\n    \"co2\": 240.5,\n    \"ch4\": 15.2,\n    \"n2o\": 12.3\n  },\n  \"factor_metadata\": {\n    \"factor_id\": \"DEFRA_2024_DIESEL\",\n    \"year\": 2024,\n    \"region\": \"UK\",\n    \"category\": \"Transport Fuels\"\n  }\n}\n```\n\n## CONFIDENCE SCORING:\n- 0.9-1.0: Exact match\n- 0.7-0.9: Good match\n- 0.5-0.7: Approximate\n- <0.5: Uncertain\n\n## INSTRUCTIONS:\n1. Search knowledge base for emission factor\n2. Validate using functions if needed\n3. Calculate total emissions\n4. Return ONLY the JSON result\n5. No explanations unless warnings needed\n\nBe concise. Return only JSON unless calculation fails.",
+
+  "model": "gpt-4o",
+  
+  "tools": [
+    {
+      "type": "file_search"
+    },
+    {
+      "type": "code_interpreter"
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "validate_emission_factor",
+        "description": "Validate selected emission factor against multiple sources and check for reasonableness",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "activity_type": {
+              "type": "string",
+              "description": "Type of activity (fuel_combustion, electricity, travel, heating, etc.)"
+            },
+            "fuel_or_energy_type": {
+              "type": "string",
+              "description": "Specific fuel, energy type, or transport mode"
+            },
+            "emission_factor": {
+              "type": "number",
+              "description": "Proposed emission factor value"
+            },
+            "factor_unit": {
+              "type": "string",
+              "description": "Unit of the emission factor"
+            },
+            "source": {
+              "type": "string",
+              "description": "Source of the emission factor"
+            },
+            "year": {
+              "type": "integer",
+              "description": "Year of the emission factor"
+            },
+            "region": {
+              "type": "string",
+              "description": "Geographic region"
+            }
+          },
+          "required": ["activity_type", "emission_factor", "factor_unit", "source"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "classify_ghg_scope",
+        "description": "Classify emission activity into correct GHG Protocol scope with detailed reasoning",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "activity_description": {
+              "type": "string",
+              "description": "Detailed description of the emission activity"
+            },
+            "category": {
+              "type": "string",
+              "description": "Activity category (fuel, electricity, travel, etc.)"
+            },
+            "supplier_vendor": {
+              "type": "string",
+              "description": "Supplier or vendor name if available"
+            },
+            "asset_ownership": {
+              "type": "string",
+              "description": "Whether asset is owned, leased, or third-party"
+            },
+            "location": {
+              "type": "string",
+              "description": "Location of activity (on-site, off-site, etc.)"
+            }
+          },
+          "required": ["activity_description", "category"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "convert_units",
+        "description": "Convert between different units commonly used in carbon accounting",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "description": "Numeric value to convert"
+            },
+            "from_unit": {
+              "type": "string",
+              "description": "Original unit (e.g., gallons, BTU, miles)"
+            },
+            "to_unit": {
+              "type": "string",
+              "description": "Target unit (e.g., liters, kWh, km)"
+            },
+            "substance_type": {
+              "type": "string",
+              "description": "Type of substance for density conversions (diesel, petrol, etc.)"
+            }
+          },
+          "required": ["value", "from_unit", "to_unit"]
+        }
+      }
+    }
+  ],
+  
+  "tool_resources": {
+    "file_search": {
+      "vector_stores": [
+        {
+          "name": "Carbon Accounting Knowledge Base",
+          "description": "Comprehensive emission factor databases including DEFRA, EPA, IPCC, RIVM, and other authoritative sources"
+        }
+      ]
+    },
+    "code_interpreter": {
+      "enabled": true
+    }
+  },
+  
+  "temperature": 0.1,
+  "top_p": 0.95,
+  
+  "response_format": {
+    "type": "json_object"
+  },
+  
+  "metadata": {
+    "purpose": "emission_calculation_and_factor_lookup",
+    "version": "2.1",
+    "specialization": "ghg_protocol_compliance_and_calculation",
+    "supported_scopes": "scope_1_2_3_comprehensive",
+    "emission_factor_sources": "defra,epa,ipcc,rivm,iea,multiple_international",
+    "calculation_precision": "high_accuracy_with_breakdown",
+    "confidence_scoring": "enabled",
+    "quality_validation": "comprehensive",
+    "optimization": "token_efficient"
+  }
+} 

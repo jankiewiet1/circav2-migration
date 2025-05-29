@@ -19,8 +19,8 @@ interface Scope2DashboardProps {
 }
 
 const getCalculatedEmissions = (entry: EmissionEntryWithCalculation): number => {
-  if (entry.emission_calc_climatiq && entry.emission_calc_climatiq.length > 0) {
-    return entry.emission_calc_climatiq[0]?.total_emissions ?? 0;
+  if (entry.emission_calc_openai && entry.emission_calc_openai.length > 0) {
+    return entry.emission_calc_openai[0]?.total_emissions ?? 0;
   }
   return 0;
 };
@@ -238,7 +238,11 @@ export const Scope2Dashboard = ({ entries, loading, error, refetch }: Scope2Dash
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Legend formatter={(value, entry) => entry?.payload?.name || ''} />
+                      <Legend formatter={(value, entry) => {
+                        // Type assertion for payload
+                        const payload = entry?.payload as any;
+                        return payload?.name || '';
+                      }} />
                       <RechartsTooltip 
                         formatter={(value: number, name: string, props: any) => {
                           return [`${value.toFixed(2)} tCO₂e (${props.payload.percentage}%)`, props.payload.name];

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "lint": "eslint .",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "calculate-emissions": "node scripts/climatiq/calculate-emissions.js",
     "test:climatiq-direct": "node scripts/climatiq/test-climatiq-direct.js",
@@ -14,7 +14,10 @@
     "test:upload": "node scripts/test-upload-service.js",
     "deploy:functions": "node scripts/deploy-supabase-functions.js",
     "deploy:agent": "node scripts/deploy-agent.js",
-    "agent": "node scripts/run-agent.js"
+    "agent": "node scripts/run-agent.js",
+    "create-assistant": "node scripts/create-openai-assistant.js",
+    "test-assistant": "node scripts/test-assistant.js",
+    "update-assistant": "node scripts/update-assistant.js"
   },
   "dependencies": {
     "@aws-sdk/client-cloudtrail": "^3.817.0",

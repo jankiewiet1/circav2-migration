@@ -31,7 +31,7 @@ interface EmissionEntry {
   created_at: string;
   notes?: string;
   match_status?: string;
-  emission_calc_climatiq: Calculation[];
+  emission_calc_openai: Calculation[];
 }
 
 interface Scope1DetailProps {
@@ -64,7 +64,7 @@ export function Scope1Detail({ entries, loading, error, refetch }: Scope1DetailP
 
     const headers = ['Date', 'Category', 'Description', 'Quantity', 'Unit', 'Total Emissions (tCO₂e)', 'Match Status', 'Notes', 'Factor Name', 'Source', 'Region', 'Year'];
     const rows = entries.map(e => {
-      const calculation = e.emission_calc_climatiq && e.emission_calc_climatiq.length > 0 ? e.emission_calc_climatiq[0] : null;
+      const calculation = e.emission_calc_openai && e.emission_calc_openai.length > 0 ? e.emission_calc_openai[0] : null;
       const calcEmissions = calculation?.total_emissions ?? 0;
       return [
         `"${e.date}"`, 
@@ -160,8 +160,8 @@ export function Scope1Detail({ entries, loading, error, refetch }: Scope1DetailP
                 </TableHeader>
                 <TableBody>
                   {entries.map((entry) => {
-                    const calculation = entry.emission_calc_climatiq && entry.emission_calc_climatiq.length > 0 
-                      ? entry.emission_calc_climatiq[0] 
+                    const calculation = entry.emission_calc_openai && entry.emission_calc_openai.length > 0 
+                      ? entry.emission_calc_openai[0] 
                       : null;
                     
                     return (
