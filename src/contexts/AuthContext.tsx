@@ -278,9 +278,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: "You have been successfully logged out",
       });
       
-      // 6. Force navigation to login page with a small delay to ensure toast shows
+      // 6. Force navigation to home page with a small delay to ensure toast shows
       setTimeout(() => {
-        window.location.href = '/auth/login';
+        window.location.href = '/';
       }, 500);
       
     } catch (error) {
@@ -304,7 +304,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       
       setTimeout(() => {
-        window.location.href = '/auth/login';
+        window.location.href = '/';
       }, 500);
     }
   };

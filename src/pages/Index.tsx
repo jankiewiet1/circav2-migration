@@ -125,16 +125,16 @@ const Index = () => {
           
           <div className="flex items-center space-x-4">
             <LanguageSelector />
-            <Button className="border border-gray-300 text-gray-700 bg-white hover:bg-gray-100" asChild>
+            <Button className="border-2 border-circa-green-dark text-gray-700 bg-white hover:bg-gray-100" asChild>
               <Link to="/auth/login">{t('common.login')}</Link>
             </Button>
-            <Button className="bg-circa-green hover:bg-circa-green-dark text-white px-5" asChild>
+            <Button className="bg-circa-green hover:bg-circa-green-dark text-black px-5 border-2 border-circa-green-dark" asChild>
               <Link to="/auth/register">{t('common.signup')}</Link>
             </Button>
           </div>
         </div>
       </header>
-
+      
       {/* ChatGPT-Style Calculator - First section below header */}
       <ChatGPTStyleCalculator />
 
@@ -159,13 +159,13 @@ const Index = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <Button className="bg-circa-green hover:bg-circa-green-dark text-white h-12 px-6 text-base font-medium" asChild>
+              <Button className="bg-circa-green hover:bg-circa-green-dark text-black h-12 px-6 text-base font-medium border-2 border-circa-green-dark" asChild>
                 <Link to="/auth/register">
                   {t('hero.cta.primary')}
                   <ArrowUpRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button className="bg-white border-2 border-circa-green text-circa-green hover:bg-green-50 h-12 px-6 text-base font-medium" asChild>
+              <Button className="bg-white border-2 border-circa-green-dark text-circa-green hover:bg-circa-green-light h-12 px-6 text-base font-medium" asChild>
                 <a href="#ai-calculator">
                   {t('hero.cta.secondary')}
                 </a>
@@ -245,7 +245,7 @@ const Index = () => {
           </div>
           <HowItWorksFlow />
           <div className="mt-14 text-center">
-            <Button className="bg-circa-green hover:bg-circa-green-dark text-white h-11 px-8 text-lg" asChild>
+            <Button className="bg-circa-green hover:bg-circa-green-dark text-black h-11 px-8 text-lg" asChild>
               <Link to="/auth/register">
                 {t('howItWorks.cta')}
               </Link>
@@ -274,11 +274,11 @@ const Index = () => {
           </div>
           
           <div className="max-w-6xl mx-auto">
-            <CO2Calculator />
+          <CO2Calculator />
           </div>
         </div>
       </section>
-
+      
       {/* Product Showcase */}
       <section id="showcase" className="py-20 md:py-28 px-4 bg-gray-50">
         <div className="max-w-[1400px] w-full mx-auto px-4">
@@ -294,7 +294,7 @@ const Index = () => {
           <ProductShowcase />
           
           <div className="mt-14 text-center">
-            <Button className="bg-circa-green hover:bg-circa-green-dark text-white h-11 px-8 text-lg" asChild>
+            <Button className="bg-circa-green hover:bg-circa-green-dark text-black h-11 px-8 text-lg" asChild>
               <Link to="/auth/register">
                 {t('showcase.cta')}
               </Link>
@@ -358,7 +358,7 @@ const Index = () => {
         <div className="max-w-[1400px] w-full mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">{t('finalCta.title')}</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">{t('finalCta.subtitle')}</p>
-          <Button className="bg-white text-circa-green hover:bg-green-50 h-12 px-8 text-lg font-medium" asChild>
+          <Button className="bg-white text-circa-green hover:bg-circa-green-light h-12 px-8 text-lg font-medium border-2 border-circa-green-dark" asChild>
             <Link to="/auth/register">
               {t('finalCta.button')}
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -388,7 +388,7 @@ const Index = () => {
             setShowCalendly(false);
             setShowButtons(true);
           }}
-          className="bg-circa-green text-white rounded-full p-4 shadow-lg hover:bg-circa-green-dark transition-colors" 
+          className="bg-circa-green text-black rounded-full p-4 shadow-lg hover:bg-circa-green-dark transition-colors border-2 border-circa-green-dark" 
           aria-label={t('common.chat', 'Chat with us')}
         >
           <MessageCircle className="h-6 w-6" />
@@ -442,13 +442,13 @@ const Index = () => {
                   <div className="flex justify-center space-x-4 my-4">
                     <button 
                       onClick={() => handleBookingRequest(true)}
-                      className="bg-circa-green text-white px-6 py-2 rounded-full shadow hover:bg-circa-green-dark transition-colors flex items-center"
+                      className="bg-circa-green text-white px-6 py-2 rounded-full shadow hover:bg-circa-green-dark transition-colors flex items-center border-2 border-circa-green-dark"
                     >
                       <span className="mr-1">{t('common.yes', 'Ja, graag')}</span> 👍
                     </button>
                     <button 
                       onClick={() => handleBookingRequest(false)}
-                      className="bg-white border border-gray-300 text-gray-800 px-6 py-2 rounded-full shadow hover:bg-gray-50 transition-colors flex items-center"
+                      className="bg-white border-2 border-circa-green-dark text-gray-800 px-6 py-2 rounded-full shadow hover:bg-gray-50 transition-colors flex items-center"
                     >
                       <span className="mr-1">{t('common.no', 'Nee, bedankt')}</span> 🙂
                     </button>

@@ -65,21 +65,52 @@ export default function ChatGPTStyleCalculator() {
   const [input, setInput] = useState('');
   const [isCalculating, setIsCalculating] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showConversionCard, setShowConversionCard] = useState(false);
+  const [showCalendlyModal, setShowCalendlyModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Initialize and update messages when language changes
   useEffect(() => {
-    setMessages([
-      {
-        id: '1',
-        type: 'bot',
-        content: t('chatbot.welcome', 'Hi! I can calculate CO₂ emissions for any activity and answer questions about carbon accounting. Just describe what you want to measure or ask me anything about sustainability.'),
-        timestamp: new Date()
-      }
-    ]);
+    setMessages([]);
   }, [t]);
+
+  // Load Calendly script
+  useEffect(() => {
+    const loadCalendly = () => {
+      // Add Calendly CSS
+      if (!document.querySelector('link[href="https://assets.calendly.com/assets/external/widget.css"]')) {
+        const link = document.createElement('link');
+        link.href = 'https://assets.calendly.com/assets/external/widget.css';
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+      }
+      
+      // Add Calendly script
+      if (!document.querySelector('script[src="https://assets.calendly.com/assets/external/widget.js"]')) {
+        const script = document.createElement('script');
+        script.src = 'https://assets.calendly.com/assets/external/widget.js';
+        script.async = true;
+        document.head.appendChild(script);
+      }
+    };
+    
+    loadCalendly();
+  }, []);
+
+  // Initialize Calendly when modal opens
+  useEffect(() => {
+    if (showCalendlyModal && window.Calendly) {
+      const container = document.getElementById('calendly-modal-container');
+      if (container) {
+        container.innerHTML = ''; // Clear any existing content
+        window.Calendly.initInlineWidget({
+          url: 'https://calendly.com/circa-info/30min?hide_landing_page_details=1&hide_gdpr=1&background_color=ffffff&text_color=333333&primary_color=14532d',
+          parentElement: container
+        });
+      }
+    }
+  }, [showCalendlyModal]);
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -102,6 +133,21 @@ export default function ChatGPTStyleCalculator() {
     // Focus input on mount
     inputRef.current?.focus();
   }, []);
+
+  // Show conversion card with delay after user gets a response
+  useEffect(() => {
+    const userMessages = messages.filter(m => m.type === 'user');
+    const botResponses = messages.filter(m => m.type === 'bot' || m.type === 'result');
+    
+    // Show card 5 seconds after user gets their first response
+    if (userMessages.length > 0 && botResponses.length > 1 && !isCalculating) {
+      const timer = setTimeout(() => {
+        setShowConversionCard(true);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [messages, isCalculating]);
 
   const addMessage = (message: Omit<ChatMessage, 'id' | 'timestamp'>) => {
     const newMessage: ChatMessage = {
@@ -291,93 +337,29 @@ export default function ChatGPTStyleCalculator() {
   ];
 
   return (
-    <section className="h-screen bg-white flex relative">
-      {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-64' : 'w-0'} transition-all duration-300 bg-gray-900 text-white flex flex-col overflow-hidden`}>
-        <div className="p-4 border-b border-gray-700">
-          <button className="flex items-center w-full p-2 rounded-lg hover:bg-gray-800 transition-colors">
-            <Plus className="w-4 h-4 mr-3" />
-            <span className="text-sm">{t('chatbot.newChat', 'New chat')}</span>
-          </button>
-        </div>
-        
-        <div className="flex-1 overflow-y-auto p-2">
-          <div className="space-y-1">
-            <button className="flex items-center w-full p-2 rounded-lg hover:bg-gray-800 transition-colors text-left">
-              <MessageSquare className="w-4 h-4 mr-3 flex-shrink-0" />
-              <span className="text-sm truncate">{t('chatbot.emissionsCalculator', 'Emissions Calculator')}</span>
-            </button>
-          </div>
-        </div>
-        
-        <div className="p-4 border-t border-gray-700">
-          <div className="text-xs text-gray-400">
-            {t('chatbot.poweredBy', 'Powered by 45,000+ emission factors')}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div className="flex items-center">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 hover:bg-gray-100 rounded-lg mr-3"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            <h1 className="text-lg font-medium">{t('chatbot.emissionsCalculator', 'Emissions Calculator')}</h1>
-          </div>
-        </div>
-
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-3xl mx-auto px-4 py-8">
-            {/* Welcome Message - Only show if no user messages */}
-            {messages.filter(m => m.type === 'user').length === 0 && (
-              <div className="text-center mb-8">
-                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-white font-medium">C</span>
-                </div>
-                <h2 className="text-2xl font-medium mb-2">{t('chatbot.howCanIHelp', 'How can I help you today?')}</h2>
-                <p className="text-gray-600 mb-6">{t('chatbot.calculateEmissions', 'Calculate CO₂ emissions or ask questions about carbon accounting')}</p>
-                
-                {/* Example Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
-                  {examplePrompts.map((example, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleExampleClick(example)}
-                      className="text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm"
-                    >
-                      {example}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Chat Messages */}
-            <div className="space-y-6 pb-24">
+    <>
+      <section className="min-h-screen bg-white flex flex-col relative overflow-hidden">
+        {/* Chat Messages Container - Only visible when chatting */}
+        {messages.filter(m => m.type === 'user').length > 0 && (
+          <div className="flex-1 overflow-auto px-4 py-6">
+            <div className="max-w-3xl mx-auto space-y-6">
               {messages.map((message) => (
                 <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] ${
+                  <div className={`max-w-[85%] ${
                     message.type === 'user' 
-                      ? 'bg-black text-white rounded-2xl px-4 py-2' 
+                      ? 'bg-circa-green text-black rounded-2xl px-5 py-3 shadow-sm' 
                       : 'space-y-2'
                   }`}>
                     {message.type === 'user' && (
-                      <p className="text-sm">{message.content}</p>
+                      <p className="text-sm leading-relaxed">{message.content}</p>
                     )}
                     
                     {(message.type === 'bot' || message.type === 'result') && (
-                      <div className="flex items-start space-x-3">
-                        <div className="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-medium">C</span>
+                      <div className="flex items-start space-x-4">
+                        <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-circa-green to-circa-green-dark rounded-full flex items-center justify-center shadow-sm">
+                          <span className="text-black text-sm font-semibold">C</span>
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 bg-white rounded-2xl px-5 py-4 shadow-sm border border-gray-100">
                           <div className="text-gray-800 text-sm leading-relaxed whitespace-pre-line">
                             {message.content}
                           </div>
@@ -391,68 +373,207 @@ export default function ChatGPTStyleCalculator() {
               {/* Loading message */}
               {isCalculating && (
                 <div className="flex justify-start">
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-medium">C</span>
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-circa-green to-circa-green-dark rounded-full flex items-center justify-center shadow-sm">
+                      <span className="text-black text-sm font-semibold">C</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-gray-100">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-circa-green rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-circa-green rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                          <div className="w-2 h-2 bg-circa-green rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        </div>
+                        <span className="text-sm text-gray-600 ml-2">{t('chatbot.calculating', 'Calculating...')}</span>
                       </div>
                     </div>
                   </div>
                 </div>
               )}
-              
               <div ref={messagesEndRef} />
+            </div>
+          </div>
+        )}
+
+        {/* Welcome Screen - Only visible when no messages */}
+        {messages.filter(m => m.type === 'user').length === 0 && (
+          <div className="flex-1 flex items-center justify-center px-4">
+            <div className="w-full max-w-4xl text-center">
+              {/* Massive Centered Logo */}
+              <div className="flex items-center justify-center mb-8">
+                <Logo className="w-24 h-24 md:w-32 md:h-32 lg:w-40 lg:h-40" withText={false} isLink={false} />
+              </div>
+              
+              {/* Title and Tagline */}
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-4">Circa</h1>
+              <p className="text-lg md:text-xl lg:text-2xl text-gray-600 font-medium mb-16">{t('chatbot.tagline', 'One click circularity')}</p>
+              
+              {/* Example Cards - Smaller and More Centralized */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-2xl mx-auto">
+                {examplePrompts.map((example, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleExampleClick(example)}
+                    className="group text-left p-3 border border-gray-200 rounded-lg hover:border-circa-green hover:shadow-md transition-all duration-200 text-xs bg-white"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600 group-hover:text-gray-800">{example}</span>
+                      <ArrowRight className="w-3 h-3 text-gray-400 group-hover:text-circa-green transition-colors flex-shrink-0 ml-2" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Input Area - Fixed at Bottom */}
+        <div className="bg-white p-4 lg:p-6">
+          <div className="max-w-3xl mx-auto">
+            <form onSubmit={(e) => { e.preventDefault(); handleCalculate(e); }} className="relative">
+              <div className="flex items-center bg-white border-2 border-gray-300 rounded-2xl px-4 lg:px-6 py-3 lg:py-4 shadow-lg focus-within:border-circa-green transition-all duration-200">
+                <Input
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder={t('chatbot.messagePlaceholder', 'Message Circa')}
+                  className="flex-1 border-0 focus:ring-0 text-base bg-transparent placeholder-gray-500 focus:outline-none"
+                  disabled={isCalculating}
+                />
+                <Button
+                  type="submit"
+                  disabled={isCalculating || !input.trim()}
+                  size="sm"
+                  className="bg-circa-green hover:bg-circa-green-dark text-black rounded-xl px-4 py-2 ml-3 transition-colors"
+                >
+                  {isCalculating ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Send className="w-5 h-5" />
+                  )}
+                </Button>
+              </div>
+            </form>
+            
+            {/* CTA Button Below Input */}
+            <div className="flex justify-center mt-4">
+              {messages.filter(m => m.type === 'user').length === 0 ? (
+                <button
+                  onClick={scrollToNextSection}
+                  className="bg-circa-green-light text-circa-green rounded-full px-6 py-3 shadow-lg hover:shadow-xl transition-all duration-200 border border-circa-green hover:scale-105"
+                  aria-label={t('chatbot.scrollDown', 'Scroll down to see more')}
+                >
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-medium">{t('chatbot.seeHowWorks', 'See how Circa works')}</span>
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
+                </button>
+              ) : (
+                <div className={`transition-all duration-500 ${
+                  showConversionCard ? 'animate-pulse' : 'animate-bounce'
+                }`}>
+                  <button
+                    onClick={scrollToNextSection}
+                    className="bg-circa-green-light text-circa-green rounded-full px-4 py-2 shadow-md hover:shadow-lg transition-all duration-200 border border-circa-green hover:scale-105 text-xs"
+                  >
+                    <div className="flex items-center space-x-1">
+                      <span className="font-medium">{t('chatbot.exploreMore', 'Explore more')}</span>
+                      <ChevronDown className="w-3 h-3" />
+                    </div>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Input Area - Fixed at bottom */}
-        <div className="absolute bottom-16 left-0 right-0 p-4">
-          <div className="max-w-3xl mx-auto">
-            <form onSubmit={(e) => { e.preventDefault(); handleCalculate(e); }} className="flex items-center bg-white border border-gray-300 rounded-full px-4 py-3 shadow-sm">
-              <Input
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={t('chatbot.messagePlaceholder', 'Message Circa')}
-                className="flex-1 border-0 focus:ring-0 text-sm bg-transparent placeholder-gray-500"
-                disabled={isCalculating}
-              />
-              <Button
-                type="submit"
-                disabled={isCalculating || !input.trim()}
-                size="sm"
-                className="bg-black hover:bg-gray-800 text-white rounded-full w-8 h-8 p-0 ml-2"
+        {/* Conversion Card Modal */}
+        {messages.filter(m => m.type === 'user').length > 0 && (
+          <div 
+            className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 transition-all duration-1000 ease-out ${
+              showConversionCard 
+                ? 'opacity-100 pointer-events-auto' 
+                : 'opacity-0 pointer-events-none'
+            }`}
+          >
+            <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full mx-4 p-8 relative border border-circa-green-light">
+              {/* Close button */}
+              <button
+                onClick={() => setShowConversionCard(false)}
+                className="absolute top-4 right-4 text-circa-green hover:text-circa-green-dark transition-colors rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-circa-green-light"
+                aria-label="Close"
               >
-                {isCalculating ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-              </Button>
-            </form>
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-4">
+                  <Sparkles className="w-8 h-8 text-circa-green mr-3" />
+                  <span className="text-2xl font-semibold text-gray-900">{t('chatbot.readyForMore', 'Ready for more?')}</span>
+                </div>
+                <p className="text-gray-600 mb-6 text-lg">
+                  {t('chatbot.automateProcess', 'See how Circa can automate your entire carbon accounting process')}
+                </p>
+                <div className="space-y-4">
+                  {/* Book a Demo - Primary button */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowCalendlyModal(true);
+                    }}
+                    className="w-full bg-circa-green hover:bg-circa-green-dark text-black rounded-xl px-6 py-4 text-lg font-medium transition-colors cursor-pointer hover:shadow-md active:scale-95"
+                  >
+                    {t('chatbot.bookDemo', 'Book a Demo')}
+                  </button>
+                  {/* Explore Circa - Secondary button */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowConversionCard(false);
+                      scrollToNextSection();
+                    }}
+                    className="w-full bg-circa-green-light hover:bg-circa-green text-circa-green-dark rounded-lg px-4 py-3 text-sm font-medium transition-colors cursor-pointer hover:shadow-sm active:scale-95 border border-circa-green"
+                  >
+                    {t('chatbot.explorePlatform', 'Explore Circa Platform')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Calendly Modal */}
+      {showCalendlyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#e8f6ee] bg-opacity-90">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden border border-[#b2f2d7] relative animate-fadeIn">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-circa-green-light to-circa-green text-circa-green-dark px-6 py-4 flex justify-between items-center rounded-t-3xl border-b border-circa-green-light">
+              <div className="flex items-center gap-3">
+                <Logo className="h-8 w-8" withText={false} isLink={false} />
+                <h3 className="text-lg font-semibold tracking-tight">Book a Demo</h3>
+              </div>
+              <button 
+                onClick={() => setShowCalendlyModal(false)}
+                className="text-circa-green hover:text-circa-green-dark transition-colors rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-circa-green-light"
+                aria-label="Close modal"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {/* Calendly Content */}
+            <div className="h-[650px] bg-circa-green-light">
+              <div id="calendly-modal-container" className="h-full w-full" />
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Scroll Down Arrow - Only show when no messages */}
-      {messages.filter(m => m.type === 'user').length === 0 && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
-          <button
-            onClick={scrollToNextSection}
-            className="bg-gray-100 text-gray-600 rounded-full p-3 shadow-sm hover:bg-gray-200 transition-colors animate-bounce"
-            aria-label={t('chatbot.scrollDown', 'Scroll down to see more')}
-          >
-            <ChevronDown className="w-5 h-5" />
-          </button>
-        </div>
       )}
-    </section>
+    </>
   );
 } 

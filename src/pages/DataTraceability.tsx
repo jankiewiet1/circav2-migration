@@ -219,36 +219,36 @@ export default function DataTraceability() {
     if (!company) return;
 
     try {
-      // Get raw data count
-      const { count: rawCount } = await supabase
-        .from('emission_entries')
-        .select('*', { count: 'exact', head: true })
-        .eq('company_id', company.id);
+    // Get raw data count
+    const { count: rawCount } = await supabase
+      .from('emission_entries')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', company.id);
 
-      // Get pending calculation count
-      const { count: pendingCount } = await supabase
-        .from('emission_entries')
-        .select('*', { count: 'exact', head: true })
-        .eq('company_id', company.id)
-        .eq('match_status', 'unmatched');
+    // Get pending calculation count
+    const { count: pendingCount } = await supabase
+      .from('emission_entries')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', company.id)
+      .eq('match_status', 'unmatched');
 
       // Get unified calculation summary
       const calculationSummary = await unifiedCalculationService.getCalculationSummary(company.id);
 
-      const totalRaw = rawCount || 0;
-      const pending = pendingCount || 0;
+    const totalRaw = rawCount || 0;
+    const pending = pendingCount || 0;
       const coverage = totalRaw > 0 ? (calculationSummary.total_calculations / totalRaw) * 100 : 0;
 
-      setDataSummary({
-        total_raw_records: totalRaw,
+    setDataSummary({
+      total_raw_records: totalRaw,
         total_calculated: calculationSummary.total_calculations,
         last_calculation_run: calculationSummary.last_calculation ? new Date(calculationSummary.last_calculation).toLocaleDateString() : '',
-        active_factor_version: 'v2024.1',
-        pending_calculation: pending,
+      active_factor_version: 'v2024.1',
+      pending_calculation: pending,
         calculation_coverage: coverage,
         rag_calculations: calculationSummary.rag_calculations,
         assistant_calculations: calculationSummary.assistant_calculations
-      });
+    });
     } catch (error) {
       console.error('Error fetching data summary:', error);
     }
@@ -260,7 +260,7 @@ export default function DataTraceability() {
     setIsCalculating(true);
     setCalculationProgress({ current: 0, total: 0 });
     setCurrentProcessingEntry('');
-
+    
     try {
       // Get entries to process
       let entriesToProcess = rawData;
@@ -271,15 +271,15 @@ export default function DataTraceability() {
       if (!recalculateAll) {
         // Only process unmatched entries
         entriesToProcess = entriesToProcess.filter(entry => entry.match_status === 'unmatched');
-      }
-
+        }
+        
       if (entriesToProcess.length === 0) {
         toast.info("No entries found for calculation");
         return;
       }
 
-      setCalculationProgress({ current: 0, total: entriesToProcess.length });
-
+        setCalculationProgress({ current: 0, total: entriesToProcess.length });
+        
       console.log(`🚀 Starting hybrid calculation for ${entriesToProcess.length} entries (prefer RAG: ${preferRag})`);
 
       // Prepare inputs for hybrid calculation
@@ -478,8 +478,8 @@ export default function DataTraceability() {
     const matchesStatus = statusFilter === "all" || entry.match_status === statusFilter;
     
     const matchesDateRange = (!dateRange.start || entry.date >= dateRange.start) &&
-                            (!dateRange.end || entry.date <= dateRange.end);
-    
+                         (!dateRange.end || entry.date <= dateRange.end);
+      
     return matchesSearch && matchesScope && matchesStatus && matchesDateRange;
   });
 
@@ -495,7 +495,7 @@ export default function DataTraceability() {
     const entryDate = new Date(entry.calculated_at).toISOString().split('T')[0];
     const matchesDateRange = (!dateRange.start || entryDate >= dateRange.start) &&
                             (!dateRange.end || entryDate <= dateRange.end);
-    
+      
     return matchesSearch && matchesScope && matchesMethod && matchesDateRange;
   });
 
