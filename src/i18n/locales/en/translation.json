@@ -198,7 +198,7 @@
       "year": "Target year",
       "current": "Current emissions",
       "target": "Target emissions",
-      "required": "Required reduction"
+      "description": "Set your reduction target and track progress"
     },
     "emissionsOverview": "Emissions Overview",
     "totalEmissions": "Total emissions",
@@ -279,5 +279,26 @@
     "noBooking": "No problem! If you have questions about our services, you can reach us at info@circa.site.",
     "assistMessage": "Our team is ready to help you.",
     "contactInfo": "Email: info@circa.site"
+  },
+  "chatbot": {
+    "welcome": "Hi! I can calculate CO₂ emissions for any activity. Just describe what you want to measure.",
+    "howCanIHelp": "How can I help you today?",
+    "calculateEmissions": "Calculate CO₂ emissions for any activity",
+    "example1": "100L diesel for vehicles",
+    "example2": "500 kWh electricity",
+    "example3": "1000 m³ natural gas",
+    "messagePlaceholder": "Message Circa",
+    "newChat": "New chat",
+    "emissionsCalculator": "Emissions Calculator",
+    "poweredBy": "Powered by 45,000+ emission factors",
+    "scrollDown": "Scroll down to see more",
+    "enterRequest": "Please enter an emission calculation request",
+    "ofEmissions": "of CO₂ emissions",
+    "usingFactor": "Using",
+    "emissionFactor": "emission factor",
+    "confidence": "Confidence",
+    "calculationComplete": "Calculation completed!",
+    "noMatch": "I couldn't find a good match for your request. Try being more specific about the activity, quantity, and unit.",
+    "error": "Something went wrong. Please try again."
   }
 } 

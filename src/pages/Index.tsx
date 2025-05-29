@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Check, Upload, BarChart3, FileText, Target, ArrowUpRight, MessageCircle, Calendar, X, ChevronLeft } from "lucide-react";
+import { ArrowRight, Check, Upload, BarChart3, FileText, Target, ArrowUpRight, MessageCircle, Calendar, X, ChevronLeft, ChevronDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { Logo } from "@/components/branding/Logo";
@@ -12,20 +12,12 @@ import { ClientLogos } from "@/components/landing/ClientLogos";
 import { ProductShowcase } from "@/components/landing/ProductShowcase";
 import { ValueProposition } from "@/components/landing/ValueProposition";
 import { SignupProgress } from "@/components/landing/SignupProgress";
+import RAGChatCalculator from '@/components/landing/RAGChatCalculator';
 import CO2Calculator from '@/components/landing/CO2Calculator';
+import HeroChatCalculator from '@/components/landing/HeroChatCalculator';
+import ChatGPTStyleCalculator from '@/components/landing/ChatGPTStyleCalculator';
 import { LanguageSelector } from '@/components/ui/language-selector';
 import { useToast } from "@/components/ui/use-toast";
-
-// Fix TypeScript interface for Calendly
-declare global {
-  interface Window {
-    Calendly?: {
-      initInlineWidget: (options: { url: string, parentElement: HTMLElement, prefill?: any }) => void;
-      initPopupWidget: (options: { url: string }) => void;
-      showPopupWidget: (url: string) => void;
-    };
-  }
-}
 
 const Index = () => {
   const { t } = useTranslation();
@@ -117,7 +109,7 @@ const Index = () => {
   
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Sticky Header/Nav */}
+      {/* Sticky Header/Nav - Always visible */}
       <header className="fixed w-full bg-white/95 backdrop-blur-sm shadow-sm z-50 py-4 px-2 md:px-6">
         <div className="max-w-[1400px] w-full mx-auto flex justify-between items-center px-4">
           <div className="flex items-center">
@@ -126,7 +118,7 @@ const Index = () => {
           
           <div className="hidden md:flex items-center space-x-6 text-base">
             <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 font-medium">{t('nav.howItWorks')}</a>
-            <a href="#co2-calculator" className="text-gray-600 hover:text-gray-900 font-medium">{t('nav.calculator', 'CO₂ Calculator')}</a>
+            <a href="#calculator-demo" className="text-gray-600 hover:text-gray-900 font-medium">{t('nav.calculator', 'AI Calculator')}</a>
             <a href="#showcase" className="text-gray-600 hover:text-gray-900 font-medium">{t('nav.showcase', 'Circa in Action')}</a>
             <a href="#why-circa" className="text-gray-600 hover:text-gray-900 font-medium">{t('nav.whyCirca')}</a>
           </div>
@@ -142,9 +134,12 @@ const Index = () => {
           </div>
         </div>
       </header>
-      
-      {/* Hero Section */}
-      <section className="min-h-screen flex items-center pt-20 pb-16 md:pt-0 md:pb-0 px-4 sm:px-6 lg:px-8 bg-white">
+
+      {/* ChatGPT-Style Calculator - First section below header */}
+      <ChatGPTStyleCalculator />
+
+      {/* Original Hero Section */}
+      <section id="learn-more" className="min-h-screen flex items-center pt-20 pb-16 md:pt-0 md:pb-0 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-[1400px] w-full mx-auto grid lg:grid-cols-2 gap-8 md:gap-16 items-center px-4">
           <div className="text-left">
             <div className="flex flex-wrap gap-2 mb-6">
@@ -171,7 +166,7 @@ const Index = () => {
                 </Link>
               </Button>
               <Button className="bg-white border-2 border-circa-green text-circa-green hover:bg-green-50 h-12 px-6 text-base font-medium" asChild>
-                <a href="#co2-calculator">
+                <a href="#ai-calculator">
                   {t('hero.cta.secondary')}
                 </a>
               </Button>
@@ -266,13 +261,24 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CO2 Calculator Demo Section */}
-      <section id="co2-calculator" className="py-14 bg-gray-50 border-y border-gray-100">
+      {/* Calculator Demo Section */}
+      <section id="calculator-demo" className="py-14 bg-gray-50 border-y border-gray-100">
         <div className="max-w-[1400px] w-full mx-auto px-4">
-          <CO2Calculator />
+          <div className="text-center mb-8">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900">
+              Detailed Step-by-Step Calculator
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Perfect for comprehensive analysis and detailed breakdowns
+            </p>
+          </div>
+          
+          <div className="max-w-6xl mx-auto">
+            <CO2Calculator />
+          </div>
         </div>
       </section>
-      
+
       {/* Product Showcase */}
       <section id="showcase" className="py-20 md:py-28 px-4 bg-gray-50">
         <div className="max-w-[1400px] w-full mx-auto px-4">

@@ -193,12 +193,12 @@
     "shortHaulFlight": "Vliegreis -2.500 km",
     "longHaulFlight": "Vliegreis 2.500+ km",
     "reductionTarget": {
-      "title": "CO₂-reductiedoel",
+      "title": "CO₂ Reductiedoelstelling",
       "percentage": "Doelreductiepercentage",
       "year": "Doeljaar",
-      "current": "Huidige uitstoot",
-      "target": "Doeluitstoot",
-      "required": "Vereiste reductie"
+      "current": "Huidige emissies",
+      "target": "Doelemissies",
+      "description": "Stel uw reductiedoelstelling in en volg de voortgang"
     },
     "emissionsOverview": "Uitstootoverzicht",
     "totalEmissions": "Totale uitstoot",
@@ -279,5 +279,26 @@
     "noBooking": "Geen probleem! Als u vragen heeft over onze diensten, kunt u ons bereiken via info@circa.site.",
     "assistMessage": "Ons team staat klaar om u te helpen.",
     "contactInfo": "Email: info@circa.site"
+  },
+  "chatbot": {
+    "welcome": "Hallo! Ik kan CO₂-uitstoot berekenen voor elke activiteit. Beschrijf gewoon wat je wilt meten.",
+    "howCanIHelp": "Hoe kan ik je vandaag helpen?",
+    "calculateEmissions": "Bereken CO₂-uitstoot voor elke activiteit",
+    "example1": "100L diesel voor voertuigen",
+    "example2": "500 kWh elektriciteit",
+    "example3": "1000 m³ aardgas",
+    "messagePlaceholder": "Bericht aan Circa",
+    "newChat": "Nieuwe chat",
+    "emissionsCalculator": "Emissie Calculator",
+    "poweredBy": "Ondersteund door 45.000+ emissiefactoren",
+    "scrollDown": "Scroll naar beneden voor meer",
+    "enterRequest": "Voer een emissieberekeningsverzoek in",
+    "ofEmissions": "CO₂-uitstoot",
+    "usingFactor": "Gebruik makend van",
+    "emissionFactor": "emissiefactor",
+    "confidence": "Vertrouwen",
+    "calculationComplete": "Berekening voltooid!",
+    "noMatch": "Ik kon geen goede match vinden voor je verzoek. Probeer specifieker te zijn over de activiteit, hoeveelheid en eenheid.",
+    "error": "Er ging iets mis. Probeer het opnieuw."
   }
 } 

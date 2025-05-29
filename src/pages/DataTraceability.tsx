@@ -36,10 +36,14 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Bot,
+  Target,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { assistantCalculator } from '@/services/assistantEmissionCalculator';
+import { hybridEmissionCalculator } from '@/services/hybridEmissionCalculator';
+import { unifiedCalculationService, UnifiedCalculationEntry, CalculationSummary } from '@/services/unifiedCalculationService';
 
 interface RawDataEntry {
   id: string;
@@ -54,24 +58,7 @@ interface RawDataEntry {
   notes?: string;
 }
 
-interface CalculatedDataEntry {
-  id: string;
-  entry_id: string;
-  category: string;
-  description: string;
-  quantity: number;
-  unit: string;
-  scope: number;
-  total_emissions: number;
-  emissions_unit: string;
-  emission_factor: number;
-  emission_factor_unit: string;
-  confidence: number;
-  source: string;
-  calculated_at: string;
-  calculation_method: 'assistant' | 'climatiq';
-  warnings?: string[];
-}
+interface CalculatedDataEntry extends UnifiedCalculationEntry {}
 
 interface CalculationRun {
   id: string;
@@ -91,6 +78,8 @@ interface DataSummary {
   active_factor_version: string;
   pending_calculation: number;
   calculation_coverage: number;
+  rag_calculations: number;
+  assistant_calculations: number;
 }
 
 export default function DataTraceability() {
@@ -107,7 +96,9 @@ export default function DataTraceability() {
     last_calculation_run: '',
     active_factor_version: 'v2024.1',
     pending_calculation: 0,
-    calculation_coverage: 0
+    calculation_coverage: 0,
+    rag_calculations: 0,
+    assistant_calculations: 0
   });
 
   // UI states
@@ -121,6 +112,7 @@ export default function DataTraceability() {
   const [searchTerm, setSearchTerm] = useState("");
   const [scopeFilter, setScopeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [methodFilter, setMethodFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
     start: "",
     end: ""
@@ -131,6 +123,7 @@ export default function DataTraceability() {
   // Calculation controls
   const [selectedEntries, setSelectedEntries] = useState<string[]>([]);
   const [recalculateAll, setRecalculateAll] = useState(false);
+  const [preferRag, setPreferRag] = useState(true);
 
   useEffect(() => {
     if (company) {
@@ -185,58 +178,14 @@ export default function DataTraceability() {
   const fetchCalculatedData = async () => {
     if (!company) return;
 
-    const { data, error } = await supabase
-      .from('emission_calc_openai')
-      .select(`
-        id,
-        entry_id,
-        total_emissions,
-        emissions_unit,
-        calculated_at,
-        activity_id,
-        factor_name,
-        source,
-        activity_data,
-        emission_entries (
-          id,
-          category,
-          description,
-          quantity,
-          unit,
-          scope,
-          date
-        )
-      `)
-      .eq('company_id', company.id)
-      .order('calculated_at', { ascending: false });
-
-    if (error) throw error;
-
-    const formattedData: CalculatedDataEntry[] = data.map(item => {
-      const activityData = (item.activity_data as Record<string, any>) || {};
-      const isAssistant = item.activity_id === 'assistant_calculated' || item.source === 'OPENAI_ASSISTANT_API';
-
-      return {
-        id: item.id,
-        entry_id: item.entry_id ? String(item.entry_id) : '',
-        category: item.emission_entries?.category || '',
-        description: item.emission_entries?.description || '',
-        quantity: item.emission_entries?.quantity || 0,
-        unit: item.emission_entries?.unit || '',
-        scope: item.emission_entries?.scope || 0,
-        total_emissions: item.total_emissions || 0,
-        emissions_unit: item.emissions_unit || 'kg CO2e',
-        emission_factor: Number(activityData.emission_factor) || (item.total_emissions && item.emission_entries?.quantity ? item.total_emissions / item.emission_entries.quantity : 0),
-        emission_factor_unit: String(activityData.emission_factor_unit) || `kg CO2e/${item.emission_entries?.unit || 'unit'}`,
-        confidence: Number(activityData.confidence) || (isAssistant ? 0.95 : 1),
-        source: item.source || 'Unknown',
-        calculated_at: item.calculated_at || new Date().toISOString(),
-        calculation_method: isAssistant ? 'assistant' : 'climatiq',
-        warnings: activityData.warnings || []
-      };
-    });
-
-    setCalculatedData(formattedData);
+    try {
+      const calculations = await unifiedCalculationService.fetchAllCalculations(company.id);
+      setCalculatedData(calculations);
+    } catch (error) {
+      console.error('Error fetching calculated data:', error);
+      // Fallback to empty array
+      setCalculatedData([]);
+    }
   };
 
   const fetchCalculationRuns = async () => {
@@ -246,7 +195,7 @@ export default function DataTraceability() {
         id: '1',
         timestamp: new Date().toISOString(),
         user: 'System',
-        method: 'OpenAI Assistant',
+        method: 'Hybrid RAG + Assistant',
         entries_processed: 25,
         successful: 23,
         failed: 2,
@@ -256,7 +205,7 @@ export default function DataTraceability() {
         id: '2',
         timestamp: new Date(Date.now() - 86400000).toISOString(),
         user: 'Admin',
-        method: 'Climatiq API',
+        method: 'RAG Only',
         entries_processed: 15,
         successful: 15,
         failed: 0,
@@ -269,130 +218,107 @@ export default function DataTraceability() {
   const fetchDataSummary = async () => {
     if (!company) return;
 
-    // Get raw data count
-    const { count: rawCount } = await supabase
-      .from('emission_entries')
-      .select('*', { count: 'exact', head: true })
-      .eq('company_id', company.id);
+    try {
+      // Get raw data count
+      const { count: rawCount } = await supabase
+        .from('emission_entries')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', company.id);
 
-    // Get calculated data count
-    const { count: calculatedCount } = await supabase
-      .from('emission_calc_openai')
-      .select('*', { count: 'exact', head: true })
-      .eq('company_id', company.id);
+      // Get pending calculation count
+      const { count: pendingCount } = await supabase
+        .from('emission_entries')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', company.id)
+        .eq('match_status', 'unmatched');
 
-    // Get pending calculation count
-    const { count: pendingCount } = await supabase
-      .from('emission_entries')
-      .select('*', { count: 'exact', head: true })
-      .eq('company_id', company.id)
-      .eq('match_status', 'unmatched');
+      // Get unified calculation summary
+      const calculationSummary = await unifiedCalculationService.getCalculationSummary(company.id);
 
-    const totalRaw = rawCount || 0;
-    const totalCalculated = calculatedCount || 0;
-    const pending = pendingCount || 0;
-    const coverage = totalRaw > 0 ? (totalCalculated / totalRaw) * 100 : 0;
+      const totalRaw = rawCount || 0;
+      const pending = pendingCount || 0;
+      const coverage = totalRaw > 0 ? (calculationSummary.total_calculations / totalRaw) * 100 : 0;
 
-    setDataSummary({
-      total_raw_records: totalRaw,
-      total_calculated: totalCalculated,
-      last_calculation_run: new Date().toLocaleDateString(),
-      active_factor_version: 'v2024.1',
-      pending_calculation: pending,
-      calculation_coverage: coverage
-    });
+      setDataSummary({
+        total_raw_records: totalRaw,
+        total_calculated: calculationSummary.total_calculations,
+        last_calculation_run: calculationSummary.last_calculation ? new Date(calculationSummary.last_calculation).toLocaleDateString() : '',
+        active_factor_version: 'v2024.1',
+        pending_calculation: pending,
+        calculation_coverage: coverage,
+        rag_calculations: calculationSummary.rag_calculations,
+        assistant_calculations: calculationSummary.assistant_calculations
+      });
+    } catch (error) {
+      console.error('Error fetching data summary:', error);
+    }
   };
 
   const runCalculations = async (selectedOnly = false) => {
-    if (!company) {
-      toast.error("No company context available");
-      return;
-    }
+    if (!company) return;
 
     setIsCalculating(true);
     setCalculationProgress({ current: 0, total: 0 });
     setCurrentProcessingEntry('');
-    
-    try {
-      const scopeText = selectedOnly ? `${selectedEntries.length} selected entries` : 
-                       recalculateAll ? "all entries" : "uncalculated entries";
-      
-      toast.info(`🧠 Starting calculations for ${scopeText}...`);
 
-      let result;
+    try {
+      // Get entries to process
+      let entriesToProcess = rawData;
       if (selectedOnly && selectedEntries.length > 0) {
-        // Get the actual entry objects for selected entries
-        const selectedEntryObjects = rawData
-          .filter(entry => selectedEntries.includes(entry.id))
-          .map(entry => ({
-            ...entry,
-            company_id: company.id
-          }));
-        
-        console.log(`🎯 Calculating selected entries:`, selectedEntryObjects);
-        toast.info(`🎯 Processing ${selectedEntryObjects.length} selected entries via Edge Function...`);
-        
-        // Set initial progress
-        setCalculationProgress({ current: 0, total: selectedEntryObjects.length });
-        
-        // Use the batch calculator with progress tracking
-        result = await assistantCalculator.calculateBatchEntries(
-          selectedEntryObjects,
-          (completed, total, currentEntry) => {
-            setCalculationProgress({ current: completed, total });
-            if (currentEntry) {
-              setCurrentProcessingEntry(`${currentEntry.category}: ${currentEntry.description}`);
-            }
-          }
-        );
-      } else {
-        // Calculate all or uncalculated entries
-        console.log(`🔄 Calculating ${recalculateAll ? 'all' : 'uncalculated'} entries via Edge Function...`);
-        
-        // Get entries to process
-        let entriesToProcess;
-        if (recalculateAll) {
-          entriesToProcess = rawData.map(entry => ({
-            ...entry,
-            company_id: company.id
-          }));
-        } else {
-          entriesToProcess = rawData
-            .filter(entry => entry.match_status === 'unmatched' || !entry.match_status)
-            .map(entry => ({
-              ...entry,
-              company_id: company.id
-            }));
-        }
-        
-        toast.info(`🔄 Processing ${entriesToProcess.length} entries via Edge Function...`);
-        setCalculationProgress({ current: 0, total: entriesToProcess.length });
-        
-        // Use the batch calculator with progress tracking
-        result = await assistantCalculator.calculateBatchEntries(
-          entriesToProcess,
-          (completed, total, currentEntry) => {
-            setCalculationProgress({ current: completed, total });
-            if (currentEntry) {
-              setCurrentProcessingEntry(`${currentEntry.category}: ${currentEntry.description}`);
-            }
-          }
-        );
+        entriesToProcess = rawData.filter(entry => selectedEntries.includes(entry.id));
       }
+
+      if (!recalculateAll) {
+        // Only process unmatched entries
+        entriesToProcess = entriesToProcess.filter(entry => entry.match_status === 'unmatched');
+      }
+
+      if (entriesToProcess.length === 0) {
+        toast.info("No entries found for calculation");
+        return;
+      }
+
+      setCalculationProgress({ current: 0, total: entriesToProcess.length });
+
+      console.log(`🚀 Starting hybrid calculation for ${entriesToProcess.length} entries (prefer RAG: ${preferRag})`);
+
+      // Prepare inputs for hybrid calculation
+      const inputs = entriesToProcess.map(entry => ({
+        raw_input: `${entry.description} ${entry.quantity} ${entry.unit}`,
+        entry_id: entry.id
+      }));
+
+      // Use hybrid calculation service
+      const result = await hybridEmissionCalculator.batchCalculateEmissions(
+        inputs,
+        company.id,
+        preferRag
+      );
+
+      setCalculationProgress({ current: entriesToProcess.length, total: entriesToProcess.length });
 
       if (result.summary.total_entries === 0) {
         toast.info("No entries found for calculation");
       } else {
+        const ragSuccessful = result.summary.rag_successful;
+        const assistantSuccessful = result.summary.assistant_successful;
+        const failed = result.summary.failed;
+
         toast.success(
-          `✨ Calculated emissions for ${result.summary.successful_calculations} of ${result.summary.total_entries} entries`
+          `✨ Calculated emissions for ${ragSuccessful + assistantSuccessful} of ${result.summary.total_entries} entries`
         );
 
-        if (result.summary.failed_calculations > 0) {
-          toast.warning(`${result.summary.failed_calculations} entries failed calculation`);
+        if (ragSuccessful > 0) {
+          toast.success(`🤖 RAG: ${ragSuccessful} calculations`);
+        }
+        if (assistantSuccessful > 0) {
+          toast.success(`🧠 Assistant: ${assistantSuccessful} calculations`);
+        }
+        if (failed > 0) {
+          toast.warning(`❌ Failed: ${failed} entries`);
         }
 
-        // Results are already saved by the edge function - no need to save again
-        console.log(`📊 Calculation Summary:`, result.summary);
+        console.log(`📊 Hybrid Calculation Summary:`, result.summary);
         
         if (result.errors && result.errors.length > 0) {
           console.warn(`⚠️ Calculation errors:`, result.errors);
@@ -410,6 +336,24 @@ export default function DataTraceability() {
       setIsCalculating(false);
       setCalculationProgress({ current: 0, total: 0 });
       setCurrentProcessingEntry('');
+    }
+  };
+
+  // Test RAG system
+  const testRagSystem = async () => {
+    if (!company) return;
+
+    try {
+      const testInput = "I need to know the factor for fuel usage EURO 95, 100 liters in the Netherlands based on DEFRA";
+      const result = await hybridEmissionCalculator.testRagSystem(testInput, company.id);
+      
+      if (result.success) {
+        toast.success(`🎉 ${result.message}`);
+      } else {
+        toast.error(`❌ ${result.message}`);
+      }
+    } catch (error) {
+      toast.error(`Test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -524,34 +468,40 @@ export default function DataTraceability() {
     });
   };
 
-  const filteredRawData = sortData(
-    rawData.filter(entry => {
-      const matchesSearch = (entry.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (entry.category || '').toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesScope = scopeFilter === 'all' || (entry.scope && entry.scope.toString() === scopeFilter);
-      const matchesStatus = statusFilter === 'all' || entry.match_status === statusFilter;
-      const matchesDate = (!dateRange.start || entry.date >= dateRange.start) &&
-                         (!dateRange.end || entry.date <= dateRange.end);
-      
-      return matchesSearch && matchesScope && matchesStatus && matchesDate;
-    }),
-    sortBy,
-    sortOrder
-  );
+  // Filter data based on current filters
+  const filteredRawData = rawData.filter(entry => {
+    const matchesSearch = !searchTerm || 
+      entry.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entry.category.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesScope = scopeFilter === "all" || entry.scope.toString() === scopeFilter;
+    const matchesStatus = statusFilter === "all" || entry.match_status === statusFilter;
+    
+    const matchesDateRange = (!dateRange.start || entry.date >= dateRange.start) &&
+                            (!dateRange.end || entry.date <= dateRange.end);
+    
+    return matchesSearch && matchesScope && matchesStatus && matchesDateRange;
+  });
 
-  const filteredCalculatedData = sortData(
-    calculatedData.filter(entry => {
-      const matchesSearch = (entry.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (entry.category || '').toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesScope = scopeFilter === 'all' || (entry.scope && entry.scope.toString() === scopeFilter);
-      const matchesDate = (!dateRange.start || entry.calculated_at >= dateRange.start) &&
-                         (!dateRange.end || entry.calculated_at <= dateRange.end);
-      
-      return matchesSearch && matchesScope && matchesDate;
-    }),
-    sortBy,
-    sortOrder
-  );
+  const filteredCalculatedData = calculatedData.filter(entry => {
+    const matchesSearch = !searchTerm || 
+      entry.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entry.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entry.source.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesScope = scopeFilter === "all" || entry.scope.toString() === scopeFilter;
+    const matchesMethod = methodFilter === "all" || entry.calculation_method === methodFilter;
+    
+    const entryDate = new Date(entry.calculated_at).toISOString().split('T')[0];
+    const matchesDateRange = (!dateRange.start || entryDate >= dateRange.start) &&
+                            (!dateRange.end || entryDate <= dateRange.end);
+    
+    return matchesSearch && matchesScope && matchesMethod && matchesDateRange;
+  });
+
+  // Sort data
+  const sortedRawData = sortData(filteredRawData, sortBy, sortOrder);
+  const sortedCalculatedData = sortData(filteredCalculatedData, sortBy, sortOrder);
 
   return (
     <MainLayout>
@@ -803,6 +753,18 @@ export default function DataTraceability() {
                 </Select>
               )}
 
+              <Select value={methodFilter} onValueChange={setMethodFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Methods</SelectItem>
+                  <SelectItem value="RAG">RAG</SelectItem>
+                  <SelectItem value="ASSISTANT">Assistant</SelectItem>
+                  <SelectItem value="climatiq">Climatiq</SelectItem>
+                </SelectContent>
+              </Select>
+
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sort by" />
@@ -855,7 +817,7 @@ export default function DataTraceability() {
               // Raw Data Table
               <div className="space-y-4">
                 <div className="text-sm text-gray-600">
-                  Showing {filteredRawData.length} of {rawData.length} raw entries
+                  Showing {sortedRawData.length} of {rawData.length} raw entries
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
@@ -866,12 +828,12 @@ export default function DataTraceability() {
                             type="checkbox"
                             onChange={(e) => {
                               if (e.target.checked) {
-                                setSelectedEntries(filteredRawData.map(entry => entry.id));
+                                setSelectedEntries(sortedRawData.map(entry => entry.id));
                               } else {
                                 setSelectedEntries([]);
                               }
                             }}
-                            checked={selectedEntries.length === filteredRawData.length && filteredRawData.length > 0}
+                            checked={selectedEntries.length === sortedRawData.length && sortedRawData.length > 0}
                           />
                         </th>
                         <th className="text-left p-2">Date</th>
@@ -885,7 +847,7 @@ export default function DataTraceability() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredRawData.map((entry) => (
+                      {sortedRawData.map((entry) => (
                         <tr key={entry.id} className="border-b hover:bg-gray-50">
                           <td className="p-2">
                             <input
@@ -940,7 +902,7 @@ export default function DataTraceability() {
               // Calculated Data Table
               <div className="space-y-4">
                 <div className="text-sm text-gray-600">
-                  Showing {filteredCalculatedData.length} of {calculatedData.length} calculated entries
+                  Showing {sortedCalculatedData.length} of {calculatedData.length} calculated entries
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
@@ -958,7 +920,7 @@ export default function DataTraceability() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredCalculatedData.map((entry) => (
+                      {sortedCalculatedData.map((entry) => (
                         <tr key={entry.id} className="border-b hover:bg-gray-50">
                           <td className="p-2">{new Date(entry.calculated_at).toLocaleDateString()}</td>
                           <td className="p-2">{entry.category}</td>
@@ -969,23 +931,40 @@ export default function DataTraceability() {
                           </td>
                           <td className="p-2 text-sm">
                             {entry.emission_factor} {entry.emission_factor_unit}
+                            {entry.source && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                Source: {entry.source}
+                              </div>
+                            )}
                           </td>
                           <td className="p-2">
                             <Badge 
-                              variant={entry.calculation_method === 'assistant' ? 'default' : 'secondary'}
-                              className={entry.calculation_method === 'assistant' ? 'bg-blue-100 text-blue-800' : ''}
+                              variant={entry.calculation_method === 'RAG' ? 'default' : entry.calculation_method === 'ASSISTANT' ? 'secondary' : 'outline'}
+                              className={entry.calculation_method === 'RAG' ? 'bg-blue-100 text-blue-800' : entry.calculation_method === 'ASSISTANT' ? 'bg-green-100 text-green-800' : ''}
                             >
-                              {entry.calculation_method === 'assistant' ? (
-                                <><Brain className="h-3 w-3 mr-1" />AI</>
+                              {entry.calculation_method === 'RAG' ? (
+                                <><Bot className="h-3 w-3 mr-1" />RAG</>
+                              ) : entry.calculation_method === 'ASSISTANT' ? (
+                                <><Brain className="h-3 w-3 mr-1" />Assistant</>
                               ) : (
-                                <><Zap className="h-3 w-3 mr-1" />API</>
+                                <><Zap className="h-3 w-3 mr-1" />Climatiq</>
                               )}
                             </Badge>
                           </td>
                           <td className="p-2">
-                            {entry.calculation_method === 'assistant' && (
-                              <Badge variant="outline" className="text-xs">
+                            {entry.calculation_method === 'RAG' && (
+                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                {(entry.confidence * 100).toFixed(1)}%
+                              </Badge>
+                            )}
+                            {entry.calculation_method === 'ASSISTANT' && (
+                              <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
                                 {(entry.confidence * 100).toFixed(0)}%
+                              </Badge>
+                            )}
+                            {entry.calculation_method === 'CLIMATIQ' && (
+                              <Badge variant="outline" className="text-xs bg-gray-50 text-gray-700">
+                                100%
                               </Badge>
                             )}
                           </td>

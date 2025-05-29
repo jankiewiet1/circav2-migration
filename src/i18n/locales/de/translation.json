@@ -198,7 +198,7 @@
       "year": "Zieljahr",
       "current": "Aktuelle Emissionen",
       "target": "Zielemissionen",
-      "required": "Erforderliche Reduktion"
+      "description": "Setzen Sie Ihr Reduktionsziel und verfolgen Sie den Fortschritt"
     },
     "emissionsOverview": "Emissionsübersicht",
     "totalEmissions": "Gesamtemissionen",
@@ -279,5 +279,26 @@
     "noBooking": "Kein Problem! Wenn Sie Fragen zu unseren Dienstleistungen haben, erreichen Sie uns unter info@circa.site.",
     "assistMessage": "Unser Team steht bereit, um Ihnen zu helfen.",
     "contactInfo": "E-Mail: info@circa.site"
+  },
+  "chatbot": {
+    "welcome": "Hallo! Ich kann CO₂-Emissionen für jede Aktivität berechnen. Beschreiben Sie einfach, was Sie messen möchten.",
+    "howCanIHelp": "Wie kann ich Ihnen heute helfen?",
+    "calculateEmissions": "CO₂-Emissionen für jede Aktivität berechnen",
+    "example1": "100L Diesel für Fahrzeuge",
+    "example2": "500 kWh Strom",
+    "example3": "1000 m³ Erdgas",
+    "messagePlaceholder": "Nachricht an Circa",
+    "newChat": "Neuer Chat",
+    "emissionsCalculator": "Emissions-Rechner",
+    "poweredBy": "Unterstützt von 45.000+ Emissionsfaktoren",
+    "scrollDown": "Nach unten scrollen für mehr",
+    "enterRequest": "Bitte geben Sie eine Emissionsberechnungsanfrage ein",
+    "ofEmissions": "CO₂-Emissionen",
+    "usingFactor": "Verwendung",
+    "emissionFactor": "Emissionsfaktor",
+    "confidence": "Vertrauen",
+    "calculationComplete": "Berechnung abgeschlossen!",
+    "noMatch": "Ich konnte keine gute Übereinstimmung für Ihre Anfrage finden. Versuchen Sie, spezifischer über die Aktivität, Menge und Einheit zu sein.",
+    "error": "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut."
   }
 } 
