@@ -281,12 +281,12 @@
     "contactInfo": "E-Mail: info@circa.site"
   },
   "chatbot": {
-    "welcome": "Hallo! Ich kann CO₂-Emissionen für jede Aktivität berechnen. Beschreiben Sie einfach, was Sie messen möchten.",
+    "welcome": "Hallo! Ich kann CO₂-Emissionen für jede Aktivität berechnen und Fragen zur CO₂-Buchhaltung beantworten. Beschreiben Sie einfach, was Sie messen möchten, oder fragen Sie mich alles über Nachhaltigkeit.",
     "howCanIHelp": "Wie kann ich Ihnen heute helfen?",
-    "calculateEmissions": "CO₂-Emissionen für jede Aktivität berechnen",
+    "calculateEmissions": "CO₂-Emissionen berechnen oder Fragen zur CO₂-Buchhaltung stellen",
     "example1": "100L Diesel für Fahrzeuge",
     "example2": "500 kWh Strom",
-    "example3": "1000 m³ Erdgas",
+    "example3": "Was sind Scope 3 Emissionen?",
     "messagePlaceholder": "Nachricht an Circa",
     "newChat": "Neuer Chat",
     "emissionsCalculator": "Emissions-Rechner",

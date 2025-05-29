@@ -75,7 +75,7 @@ export default function ChatGPTStyleCalculator() {
       {
         id: '1',
         type: 'bot',
-        content: t('chatbot.welcome', 'Hi! I can calculate CO₂ emissions for any activity. Just describe what you want to measure.'),
+        content: t('chatbot.welcome', 'Hi! I can calculate CO₂ emissions for any activity and answer questions about carbon accounting. Just describe what you want to measure or ask me anything about sustainability.'),
         timestamp: new Date()
       }
     ]);
@@ -134,6 +134,52 @@ export default function ChatGPTStyleCalculator() {
     setIsCalculating(true);
 
     try {
+      // First, try to determine if this is an emission calculation request or a general question
+      const isCalculationRequest = await determineRequestType(userInput);
+      
+      if (isCalculationRequest) {
+        // Handle emission calculation
+        await handleEmissionCalculation(userInput);
+      } else {
+        // Handle general AI assistant question
+        await handleGeneralQuestion(userInput);
+      }
+    } catch (error) {
+      console.error('Error processing request:', error);
+      addMessage({
+        type: 'bot',
+        content: t('chatbot.error', 'Something went wrong. Please try again.')
+      });
+    } finally {
+      setIsCalculating(false);
+    }
+  };
+
+  const determineRequestType = async (input: string): Promise<boolean> => {
+    // Simple heuristics to determine if it's a calculation request
+    const calculationKeywords = [
+      'calculate', 'emission', 'co2', 'carbon', 'footprint', 'kg', 'ton', 'tonne',
+      'liter', 'litre', 'kwh', 'kw', 'watt', 'diesel', 'petrol', 'gas', 'electricity',
+      'flight', 'transport', 'vehicle', 'fuel', 'm3', 'cubic', 'gallon'
+    ];
+    
+    const lowerInput = input.toLowerCase();
+    
+    // Check for numbers (quantities)
+    const hasNumbers = /\d/.test(input);
+    
+    // Check for calculation keywords
+    const hasCalculationKeywords = calculationKeywords.some(keyword => 
+      lowerInput.includes(keyword)
+    );
+    
+    // If it has numbers AND calculation keywords, it's likely a calculation
+    // If it has strong calculation indicators, treat as calculation
+    return hasNumbers && hasCalculationKeywords;
+  };
+
+  const handleEmissionCalculation = async (userInput: string) => {
+    try {
       // Call the RAG emissions calculator Edge Function
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rag-emissions-calculator`, {
         method: 'POST',
@@ -170,12 +216,51 @@ export default function ChatGPTStyleCalculator() {
       }
     } catch (error) {
       console.error('Calculation error:', error);
+      throw error;
+    }
+  };
+
+  const handleGeneralQuestion = async (userInput: string) => {
+    try {
+      // Call OpenAI for general questions about carbon accounting, sustainability, etc.
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-assistant`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userInput,
+          context: 'carbon_accounting_assistant'
+        }),
+      });
+
+      if (!response.ok) {
+        // If chat assistant fails, provide a helpful fallback
+        addMessage({
+          type: 'bot',
+          content: `I'm primarily designed to calculate CO₂ emissions. For general questions about carbon accounting and sustainability, I'd recommend:\n\n• Checking our help documentation\n• Contacting our support team at info@circa.site\n• Or try rephrasing your question as an emission calculation request\n\nFor example: "Calculate emissions for 100L diesel" or "500 kWh electricity consumption"`
+        });
+        return;
+      }
+
+      const data = await response.json();
+      
+      if (data.response) {
+        addMessage({
+          type: 'bot',
+          content: data.response
+        });
+      } else {
+        throw new Error('No response from assistant');
+      }
+    } catch (error) {
+      console.error('General question error:', error);
+      // Fallback response for general questions
       addMessage({
         type: 'bot',
-        content: t('chatbot.error', 'Something went wrong. Please try again.')
+        content: `I'm here to help with carbon emissions calculations and basic questions about sustainability. For detailed support, please contact our team at info@circa.site or visit our help center.\n\nTry asking me to calculate emissions like:\n• "100L diesel for vehicles"\n• "500 kWh electricity consumption"\n• "Flight from Amsterdam to London"`
       });
-    } finally {
-      setIsCalculating(false);
     }
   };
 
@@ -202,7 +287,7 @@ export default function ChatGPTStyleCalculator() {
   const examplePrompts = [
     t('chatbot.example1', '100L diesel for vehicles'),
     t('chatbot.example2', '500 kWh electricity'),
-    t('chatbot.example3', '1000 m³ natural gas')
+    t('chatbot.example3', 'What is Scope 3 emissions?')
   ];
 
   return (
@@ -257,7 +342,7 @@ export default function ChatGPTStyleCalculator() {
                   <span className="text-white font-medium">C</span>
                 </div>
                 <h2 className="text-2xl font-medium mb-2">{t('chatbot.howCanIHelp', 'How can I help you today?')}</h2>
-                <p className="text-gray-600 mb-6">{t('chatbot.calculateEmissions', 'Calculate CO₂ emissions for any activity')}</p>
+                <p className="text-gray-600 mb-6">{t('chatbot.calculateEmissions', 'Calculate CO₂ emissions or ask questions about carbon accounting')}</p>
                 
                 {/* Example Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
