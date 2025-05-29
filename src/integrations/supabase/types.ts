@@ -279,39 +279,6 @@ export type Database = {
           },
         ]
       }
-      content_translations: {
-        Row: {
-          content_type: string
-          created_at: string | null
-          de_text: string | null
-          en_text: string
-          id: string
-          key: string
-          nl_text: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          content_type: string
-          created_at?: string | null
-          de_text?: string | null
-          en_text: string
-          id?: string
-          key: string
-          nl_text?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          content_type?: string
-          created_at?: string | null
-          de_text?: string | null
-          en_text?: string
-          id?: string
-          key?: string
-          nl_text?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       data_entry: {
         Row: {
           activity_description: string
