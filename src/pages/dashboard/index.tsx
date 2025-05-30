@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { format, subMonths, isAfter } from "date-fns";
+import { format, subMonths, subYears } from "date-fns";
 import { 
   ArrowUp, ArrowDown, CalendarIcon, BarChart2, PieChart as PieChartIcon, 
   AreaChart as AreaChartIcon, Target, Clock, TrendingUp, TrendingDown,
@@ -180,17 +180,54 @@ const FilterBar = ({ filters, onFiltersChange }: {
   filters: DashboardFilters;
   onFiltersChange: (filters: DashboardFilters) => void;
 }) => {
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: subMonths(new Date(), 12),
-    to: new Date(),
-  });
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
-  const categories = [
-    "employee_commute", "natural_gas", "flights", "goods", "travel", 
-    "electricity", "fuel", "waste", "water"
-  ];
+  // Helper function to calculate date range based on period
+  const getDateRangeFromPeriod = useCallback((period: string) => {
+    const now = new Date();
+    let from: Date;
+    
+    switch (period) {
+      case '3M':
+        from = subMonths(now, 3);
+        break;
+      case '6M':
+        from = subMonths(now, 6);
+        break;
+      case '1Y':
+        from = subYears(now, 1);
+        break;
+      case '2Y':
+        from = subYears(now, 2);
+        break;
+      default:
+        from = subYears(now, 1);
+    }
+    
+    return { from, to: now };
+  }, []);
 
-  const companies = ["All Companies", "Headquarters", "EU Operations", "US Operations"];
+  // Handle period button clicks
+  const handlePeriodClick = useCallback((period: string) => {
+    const newDateRange = getDateRangeFromPeriod(period);
+    onFiltersChange({ 
+      ...filters, 
+      period,
+      dateRange: newDateRange 
+    });
+  }, [filters, onFiltersChange, getDateRangeFromPeriod]);
+
+  // Handle custom date range selection
+  const handleCustomDateRange = useCallback((range: DateRange | undefined) => {
+    setDateRange(range);
+    if (range?.from && range?.to) {
+      onFiltersChange({
+        ...filters,
+        period: 'custom',
+        dateRange: { from: range.from, to: range.to }
+      });
+    }
+  }, [filters, onFiltersChange]);
 
   return (
     <motion.div
@@ -208,7 +245,7 @@ const FilterBar = ({ filters, onFiltersChange }: {
                 key={period}
                 variant={filters.period === period ? "default" : "outline"}
                 size="sm"
-                onClick={() => onFiltersChange({ ...filters, period })}
+                onClick={() => handlePeriodClick(period)}
                 className="h-8 px-3"
               >
                 {period}
@@ -217,8 +254,12 @@ const FilterBar = ({ filters, onFiltersChange }: {
           </div>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8">
-                <CalendarIcon className="h-4 w-4" />
+              <Button 
+                variant={filters.period === 'custom' ? "default" : "outline"} 
+                size="sm" 
+                className="h-8"
+              >
+                <CalendarIcon className="h-4 w-4 mr-1" />
                 Custom
               </Button>
             </PopoverTrigger>
@@ -228,7 +269,7 @@ const FilterBar = ({ filters, onFiltersChange }: {
                 mode="range"
                 defaultMonth={dateRange?.from}
                 selected={dateRange}
-                onSelect={setDateRange}
+                onSelect={handleCustomDateRange}
                 numberOfMonths={2}
               />
             </PopoverContent>
@@ -242,11 +283,12 @@ const FilterBar = ({ filters, onFiltersChange }: {
             <div key={scope} className="flex items-center space-x-2">
               <Checkbox
                 id={`scope-${scope}`}
-                checked={filters.scopes.includes(scope)}
+                checked={filters.scopes?.includes(scope) ?? true}
                 onCheckedChange={(checked) => {
+                  const currentScopes = filters.scopes || [1, 2, 3];
                   const newScopes = checked
-                    ? [...filters.scopes, scope]
-                    : filters.scopes.filter(s => s !== scope);
+                    ? [...currentScopes.filter(s => s !== scope), scope]
+                    : currentScopes.filter(s => s !== scope);
                   onFiltersChange({ ...filters, scopes: newScopes });
                 }}
               />
@@ -256,41 +298,43 @@ const FilterBar = ({ filters, onFiltersChange }: {
             </div>
           ))}
         </div>
-
-        {/* Company Selector */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-700">Company:</span>
-          <Select value={filters.company} onValueChange={(company) => onFiltersChange({ ...filters, company })}>
-            <SelectTrigger className="w-48 h-8">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {companies.map((company) => (
-                <SelectItem key={company} value={company}>
-                  {company}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Refresh Button */}
-        <Button variant="outline" size="sm" className="h-8">
-          <RefreshCw className="h-4 w-4 mr-1" />
-          Refresh
-        </Button>
       </div>
     </motion.div>
   );
 };
 
 // Enhanced Chart Components
-const TimeSeriesChart = ({ data, type = 'line' }: { data: any[]; type?: 'line' | 'area' }) => {
+const TimeSeriesChart = ({ data, type = 'line', filters }: { 
+  data: any[]; 
+  type?: 'line' | 'area';
+  filters: DashboardFilters;
+}) => {
   const ChartComponent = type === 'area' ? AreaChart : LineChart;
+  
+  // Filter data based on selected scopes
+  const filteredData = useMemo(() => {
+    if (!filters.scopes || filters.scopes.length === 0) return data;
+    
+    return data.map(item => {
+      const filteredItem: any = { month: item.month };
+      
+      if (filters.scopes.includes(1)) {
+        filteredItem["Scope 1"] = item["Scope 1"];
+      }
+      if (filters.scopes.includes(2)) {
+        filteredItem["Scope 2"] = item["Scope 2"];
+      }
+      if (filters.scopes.includes(3)) {
+        filteredItem["Scope 3"] = item["Scope 3"];
+      }
+      
+      return filteredItem;
+    });
+  }, [data, filters.scopes]);
   
   return (
     <ResponsiveContainer width="100%" height={350}>
-      <ChartComponent data={data}>
+      <ChartComponent data={filteredData}>
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
         <XAxis 
           dataKey="month" 
@@ -313,15 +357,27 @@ const TimeSeriesChart = ({ data, type = 'line' }: { data: any[]; type?: 'line' |
         <Legend />
         {type === 'area' ? (
           <>
-            <Area type="monotone" dataKey="Scope 1" stackId="1" stroke={SCOPE_COLORS["Scope 1"]} fill={SCOPE_COLORS["Scope 1"]} />
-            <Area type="monotone" dataKey="Scope 2" stackId="1" stroke={SCOPE_COLORS["Scope 2"]} fill={SCOPE_COLORS["Scope 2"]} />
-            <Area type="monotone" dataKey="Scope 3" stackId="1" stroke={SCOPE_COLORS["Scope 3"]} fill={SCOPE_COLORS["Scope 3"]} />
+            {filters.scopes?.includes(1) && (
+              <Area type="monotone" dataKey="Scope 1" stackId="1" stroke={SCOPE_COLORS["Scope 1"]} fill={SCOPE_COLORS["Scope 1"]} />
+            )}
+            {filters.scopes?.includes(2) && (
+              <Area type="monotone" dataKey="Scope 2" stackId="1" stroke={SCOPE_COLORS["Scope 2"]} fill={SCOPE_COLORS["Scope 2"]} />
+            )}
+            {filters.scopes?.includes(3) && (
+              <Area type="monotone" dataKey="Scope 3" stackId="1" stroke={SCOPE_COLORS["Scope 3"]} fill={SCOPE_COLORS["Scope 3"]} />
+            )}
           </>
         ) : (
           <>
-            <Line type="monotone" dataKey="Scope 1" stroke={SCOPE_COLORS["Scope 1"]} strokeWidth={2} />
-            <Line type="monotone" dataKey="Scope 2" stroke={SCOPE_COLORS["Scope 2"]} strokeWidth={2} />
-            <Line type="monotone" dataKey="Scope 3" stroke={SCOPE_COLORS["Scope 3"]} strokeWidth={2} />
+            {filters.scopes?.includes(1) && (
+              <Line type="monotone" dataKey="Scope 1" stroke={SCOPE_COLORS["Scope 1"]} strokeWidth={2} />
+            )}
+            {filters.scopes?.includes(2) && (
+              <Line type="monotone" dataKey="Scope 2" stroke={SCOPE_COLORS["Scope 2"]} strokeWidth={2} />
+            )}
+            {filters.scopes?.includes(3) && (
+              <Line type="monotone" dataKey="Scope 3" stroke={SCOPE_COLORS["Scope 3"]} strokeWidth={2} />
+            )}
           </>
         )}
       </ChartComponent>
@@ -352,64 +408,70 @@ const CategoryBarChart = ({ data }: { data: any[] }) => (
   </ResponsiveContainer>
 );
 
-const ScopeDonutChart = ({ data }: { data: any[] }) => (
-  <ResponsiveContainer width="100%" height={280}>
-    <PieChart>
-      <Pie
-        data={data}
-        cx="50%"
-        cy="50%"
-        innerRadius={60}
-        outerRadius={100}
-        paddingAngle={2}
-        dataKey="value"
-      >
-        {data.map((entry, index) => (
-          <Cell key={`cell-${index}`} fill={SCOPE_COLORS[entry.name as keyof typeof SCOPE_COLORS]} />
-        ))}
-      </Pie>
-      <Tooltip />
-      <Legend />
-    </PieChart>
-  </ResponsiveContainer>
-);
+const ScopeDonutChart = ({ data, filters }: { data: any[]; filters: DashboardFilters }) => {
+  // Filter data based on selected scopes
+  const filteredData = useMemo(() => {
+    if (!filters.scopes || filters.scopes.length === 0) return data;
+    
+    return data.filter(item => {
+      const scopeNumber = parseInt(item.name.split(' ')[1]);
+      return filters.scopes.includes(scopeNumber);
+    });
+  }, [data, filters.scopes]);
+
+  return (
+    <ResponsiveContainer width="100%" height={280}>
+      <PieChart>
+        <Pie
+          data={filteredData}
+          cx="50%"
+          cy="50%"
+          innerRadius={60}
+          outerRadius={100}
+          paddingAngle={2}
+          dataKey="value"
+        >
+          {filteredData.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={SCOPE_COLORS[entry.name as keyof typeof SCOPE_COLORS]} />
+          ))}
+        </Pie>
+        <Tooltip />
+        <Legend />
+      </PieChart>
+    </ResponsiveContainer>
+  );
+};
 
 export default function Dashboard() {
   const { user } = useAuth();
   const { company } = useCompany();
   const [chartType, setChartType] = useState<'line' | 'area'>('line');
+  
+  // Initialize filters with default values
   const [filters, setFilters] = useState<DashboardFilters>({
     period: '1Y',
     scopes: [1, 2, 3],
     categories: [],
-    company: 'All Companies'
+    dateRange: {
+      from: subYears(new Date(), 1),
+      to: new Date()
+    }
   });
 
-  // Mock loading states and data
-  const [isLoading, setIsLoading] = useState(false);
-  const dashboardData = useMemo(() => ({
-    currentMonth: {
-      total: 2223.89,
-      change: -76.5,
-      breakdown: { scope1: 2223, scope2: 0, scope3: 0 }
-    },
-    currentQuarter: {
-      total: 14429.66,
-      change: 242.1,
-      breakdown: { scope1: 5279, scope2: 1566, scope3: 9150 }
-    },
-    yearToDate: {
-      total: 18647.81,
-      change: -51.2,
-      breakdown: { scope1: 5279, scope2: 1566, scope3: 11801 }
-    },
-    emissionsOverTime: mockEmissionsData,
-    emissionsByCategory: mockCategoryData,
-    scopeBreakdown: mockScopeBreakdown
-  }), [filters]);
+  // Use real dashboard data with automatic updates
+  const { data: dashboardData, loading: isLoading, error } = useDashboardData(company?.id, filters);
+  
+  // Get entry match status for data quality panel
+  const { counts: matchCounts, loading: matchLoading } = useEntryMatchStatus(company?.id);
 
   const handleChartTypeChange = useCallback((type: 'line' | 'area') => {
     setChartType(type);
+  }, []);
+
+  // Handle Set Targets button
+  const handleSetTargets = useCallback(() => {
+    // You can implement a modal or navigate to a targets page
+    console.log('Set Targets clicked - implement target setting functionality');
   }, []);
 
   return (
@@ -429,7 +491,7 @@ export default function Dashboard() {
             <Badge variant="secondary" className="bg-green-100 text-green-800">
               Data Quality: 94%
             </Badge>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleSetTargets}>
               <Target className="h-4 w-4 mr-2" />
               Set Targets
             </Button>
@@ -439,35 +501,58 @@ export default function Dashboard() {
         {/* Filters */}
         <FilterBar filters={filters} onFiltersChange={setFilters} />
 
+        {/* Error State */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <KpiCard
             title="Current Month Emissions"
-            value={dashboardData.currentMonth.total}
+            value={dashboardData?.kpis.monthly.total || 0}
             unit="tCO₂e"
-            change={dashboardData.currentMonth.change}
-            changeType="decrease"
-            breakdown={dashboardData.currentMonth.breakdown}
-            lastUpdated="2026-03-09 (Scope 2)"
+            change={dashboardData?.kpis.monthly.percentChange}
+            changeType={dashboardData?.kpis.monthly.percentChange && dashboardData.kpis.monthly.percentChange < 0 ? "decrease" : "increase"}
+            breakdown={{
+              scope1: dashboardData?.kpis.monthly.scope1 || 0,
+              scope2: dashboardData?.kpis.monthly.scope2 || 0,
+              scope3: dashboardData?.kpis.monthly.scope3 || 0
+            }}
+            lastUpdated={dashboardData?.entries.latest?.date}
             isLoading={isLoading}
           />
           <KpiCard
             title="Current Quarter Emissions"
-            value={dashboardData.currentQuarter.total}
+            value={dashboardData?.kpis.quarterly.total || 0}
             unit="tCO₂e"
-            change={dashboardData.currentQuarter.change}
-            changeType="increase"
-            breakdown={dashboardData.currentQuarter.breakdown}
+            change={dashboardData?.kpis.quarterly.percentChange}
+            changeType={dashboardData?.kpis.quarterly.percentChange && dashboardData.kpis.quarterly.percentChange < 0 ? "decrease" : "increase"}
+            breakdown={{
+              scope1: dashboardData?.kpis.quarterly.scope1 || 0,
+              scope2: dashboardData?.kpis.quarterly.scope2 || 0,
+              scope3: dashboardData?.kpis.quarterly.scope3 || 0
+            }}
             isLoading={isLoading}
           />
           <KpiCard
             title="Year-to-Date Emissions"
-            value={dashboardData.yearToDate.total}
+            value={dashboardData?.kpis.ytd.total || 0}
             unit="tCO₂e"
-            change={dashboardData.yearToDate.change}
-            changeType="decrease"
-            breakdown={dashboardData.yearToDate.breakdown}
-            target={{ value: 111033, progress: 22.29 }}
+            change={dashboardData?.kpis.ytd.percentChange}
+            changeType={dashboardData?.kpis.ytd.percentChange && dashboardData.kpis.ytd.percentChange < 0 ? "decrease" : "increase"}
+            breakdown={{
+              scope1: dashboardData?.kpis.ytd.scope1 || 0,
+              scope2: dashboardData?.kpis.ytd.scope2 || 0,
+              scope3: dashboardData?.kpis.ytd.scope3 || 0
+            }}
+            target={{ 
+              value: dashboardData?.targets.baselineEmissions || 0, 
+              progress: dashboardData?.targets.currentProgress || 0 
+            }}
             isLoading={isLoading}
           />
         </div>
@@ -499,7 +584,15 @@ export default function Dashboard() {
               <CardDescription>Monthly emissions by scope over time</CardDescription>
             </CardHeader>
             <CardContent>
-              <TimeSeriesChart data={dashboardData.emissionsOverTime} type={chartType} />
+              {isLoading ? (
+                <Skeleton className="h-[350px] w-full" />
+              ) : (
+                <TimeSeriesChart 
+                  data={dashboardData?.timeSeries.monthly || []} 
+                  type={chartType} 
+                  filters={filters}
+                />
+              )}
             </CardContent>
           </Card>
 
@@ -510,34 +603,40 @@ export default function Dashboard() {
                 <Target className="h-5 w-5 text-green-600" />
                 Emission Reduction Target
               </CardTitle>
-              <CardDescription>Progress towards 20% reduction by 2030</CardDescription>
+              <CardDescription>Progress towards {dashboardData?.targets.currentTarget || 20}% reduction by {dashboardData?.targets.targetYear || 2030}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">22.29%</div>
-                  <div className="text-sm text-gray-500">Current Progress</div>
+              {isLoading ? (
+                <Skeleton className="h-32 w-full" />
+              ) : (
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {dashboardData?.targets.currentProgress.toFixed(1) || 0}%
+                    </div>
+                    <div className="text-sm text-gray-500">Current Progress</div>
+                  </div>
+                  <Progress value={dashboardData?.targets.currentProgress || 0} className="h-3" />
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <div className="text-gray-500">Baseline Year</div>
+                      <div className="font-semibold">{dashboardData?.targets.baselineYear || 2024}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500">Target Year</div>
+                      <div className="font-semibold">{dashboardData?.targets.targetYear || 2030}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500">Baseline Emissions</div>
+                      <div className="font-semibold">{dashboardData?.targets.baselineEmissions.toLocaleString() || 0} tCO₂e</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500">Reduction Target</div>
+                      <div className="font-semibold">{dashboardData?.targets.currentTarget || 20}%</div>
+                    </div>
+                  </div>
                 </div>
-                <Progress value={22.29} className="h-3" />
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <div className="text-gray-500">Baseline Year</div>
-                    <div className="font-semibold">2024</div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500">Target Year</div>
-                    <div className="font-semibold">2030</div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500">Baseline Emissions</div>
-                    <div className="font-semibold">113,065.93 tCO₂e</div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500">Reduction Target</div>
-                    <div className="font-semibold">20%</div>
-                  </div>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -551,7 +650,11 @@ export default function Dashboard() {
               <CardDescription>Top emission sources ranked by impact</CardDescription>
             </CardHeader>
             <CardContent>
-              <CategoryBarChart data={dashboardData.emissionsByCategory} />
+              {isLoading ? (
+                <Skeleton className="h-[300px] w-full" />
+              ) : (
+                <CategoryBarChart data={dashboardData?.breakdowns.byCategory || []} />
+              )}
             </CardContent>
           </Card>
 
@@ -562,7 +665,14 @@ export default function Dashboard() {
               <CardDescription>Breakdown showing % of total emissions</CardDescription>
             </CardHeader>
             <CardContent>
-              <ScopeDonutChart data={dashboardData.scopeBreakdown} />
+              {isLoading ? (
+                <Skeleton className="h-[280px] w-full" />
+              ) : (
+                <ScopeDonutChart 
+                  data={dashboardData?.breakdowns.byScope || []} 
+                  filters={filters}
+                />
+              )}
             </CardContent>
           </Card>
         </div>
@@ -574,7 +684,12 @@ export default function Dashboard() {
             <CardDescription>Monitor data completeness and resolve issues</CardDescription>
           </CardHeader>
           <CardContent>
-            <DashboardMatchStatus />
+            <DashboardMatchStatus 
+              matched={matchCounts.matched}
+              unmatched={matchCounts.unmatched}
+              total={matchCounts.total}
+              loading={matchLoading}
+            />
           </CardContent>
         </Card>
       </div>
