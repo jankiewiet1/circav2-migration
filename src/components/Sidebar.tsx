@@ -36,7 +36,7 @@ const NavLink = memo(({ to, icon, label, isExpanded, isActive }: {
     <Link
       to={to}
       className={cn(
-        "flex items-center px-4 py-2.5 text-sm font-medium rounded-md",
+        "flex items-center px-3 py-2 text-sm font-medium rounded-md",
         "transition-all duration-300",
         isActive 
           ? "bg-white/20 text-white" 
@@ -82,25 +82,30 @@ export const Sidebar = () => {
     <aside 
       className={cn(
         "bg-circa-green-dark text-white transition-all duration-300 ease-in-out flex flex-col",
-        isExpanded ? "w-[200px]" : "w-[55px]",
+        isExpanded ? "w-[200px]" : "w-[50px]",
         "h-screen group/sidebar hover:w-[200px]"
       )}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Logo */}
-      <div className="p-3 flex items-center justify-center">
+      {/* Logo - Made smaller */}
+      <div className="p-2 flex items-center justify-center">
         <Link to="/dashboard">
-          <MemoizedLogo variant="light" withText={false} className="transition-all duration-300" isLink={false} />
+          <MemoizedLogo 
+            variant="light" 
+            withText={false} 
+            className="w-8 h-8 transition-all duration-300" 
+            isLink={false} 
+          />
         </Link>
       </div>
       
-      {/* Navigation */}
-      <nav className="flex-1 px-1.5 py-3 space-y-0.5 overflow-y-auto">
-        <NavLink to="/dashboard" icon={<LayoutDashboard size={18} />} label="Dashboard" isExpanded={isExpanded} isActive={isPathActive('/dashboard')} />
-        <NavLink to="/reports" icon={<FileText size={18} />} label="Reports" isExpanded={isExpanded} isActive={isPathActive('/reports')} />
+      {/* Navigation - More compact spacing */}
+      <nav className="flex-1 px-1 py-2 space-y-0.5 overflow-y-auto">
+        <NavLink to="/dashboard" icon={<LayoutDashboard size={16} />} label="Dashboard" isExpanded={isExpanded} isActive={isPathActive('/dashboard')} />
+        <NavLink to="/reports" icon={<FileText size={16} />} label="Reports" isExpanded={isExpanded} isActive={isPathActive('/reports')} />
         
-        <div className="pt-4 pb-1">
+        <div className="pt-3 pb-1">
           <div className={cn(
             "px-3 text-xs font-medium text-white/60 transition-all duration-300",
             isExpanded ? "opacity-100" : "opacity-0 hidden"
@@ -109,10 +114,10 @@ export const Sidebar = () => {
           </div>
         </div>
         
-        <NavLink to="/data-upload" icon={<Upload size={18} />} label="Data Upload" isExpanded={isExpanded} isActive={isPathActive('/data-upload')} />
-        <NavLink to="/data-traceability" icon={<Database size={18} />} label="Data Traceability" isExpanded={isExpanded} isActive={isPathActive('/data-traceability')} />
+        <NavLink to="/data-upload" icon={<Upload size={16} />} label="Data Upload" isExpanded={isExpanded} isActive={isPathActive('/data-upload')} />
+        <NavLink to="/data-traceability" icon={<Database size={16} />} label="Data Traceability" isExpanded={isExpanded} isActive={isPathActive('/data-traceability')} />
         
-        <div className="pt-4 pb-1">
+        <div className="pt-3 pb-1">
           <div className={cn(
             "px-3 text-xs font-medium text-white/60 transition-all duration-300",
             isExpanded ? "opacity-100" : "opacity-0 hidden"
@@ -121,11 +126,11 @@ export const Sidebar = () => {
           </div>
         </div>
         
-        <NavLink to="/emissions/scope1" icon={<Flame size={18} />} label="Scope 1" isExpanded={isExpanded} isActive={isPathActive('/emissions/scope1')} />
-        <NavLink to="/emissions/scope2" icon={<Wind size={18} />} label="Scope 2" isExpanded={isExpanded} isActive={isPathActive('/emissions/scope2')} />
-        <NavLink to="/emissions/scope3" icon={<Truck size={18} />} label="Scope 3" isExpanded={isExpanded} isActive={isPathActive('/emissions/scope3')} />
+        <NavLink to="/emissions/scope1" icon={<Flame size={16} />} label="Scope 1" isExpanded={isExpanded} isActive={isPathActive('/emissions/scope1')} />
+        <NavLink to="/emissions/scope2" icon={<Wind size={16} />} label="Scope 2" isExpanded={isExpanded} isActive={isPathActive('/emissions/scope2')} />
+        <NavLink to="/emissions/scope3" icon={<Truck size={16} />} label="Scope 3" isExpanded={isExpanded} isActive={isPathActive('/emissions/scope3')} />
         
-        <div className="pt-4 pb-1">
+        <div className="pt-3 pb-1">
           <div className={cn(
             "px-3 text-xs font-medium text-white/60 transition-all duration-300",
             isExpanded ? "opacity-100" : "opacity-0 hidden"
@@ -136,18 +141,18 @@ export const Sidebar = () => {
         
         <NavLink
           to={company ? "/company/manage" : "/company/setup"}
-          icon={<Building2 size={18} />}
+          icon={<Building2 size={16} />}
           label="Your Company"
           isExpanded={isExpanded}
           isActive={isPathActive('/company')}
         />
-        <NavLink to="/profile" icon={<UserRound size={18} />} label="Profile" isExpanded={isExpanded} isActive={isPathActive('/profile')} />
-        <NavLink to="/settings" icon={<Settings size={18} />} label="Settings" isExpanded={isExpanded} isActive={isPathActive('/settings')} />
+        <NavLink to="/profile" icon={<UserRound size={16} />} label="Profile" isExpanded={isExpanded} isActive={isPathActive('/profile')} />
+        <NavLink to="/settings" icon={<Settings size={16} />} label="Settings" isExpanded={isExpanded} isActive={isPathActive('/settings')} />
       </nav>
       
-      {/* Footer */}
-      <div className="p-1.5 border-t border-white/10">
-        <NavLink to="/help" icon={<HelpCircle size={18} />} label="Help" isExpanded={isExpanded} isActive={isPathActive('/help')} />
+      {/* Footer - More compact */}
+      <div className="p-1 border-t border-white/10">
+        <NavLink to="/help" icon={<HelpCircle size={16} />} label="Help" isExpanded={isExpanded} isActive={isPathActive('/help')} />
         <button 
           className={cn(
             "w-full flex items-center px-3 py-2 text-sm font-medium rounded-md",
@@ -155,7 +160,7 @@ export const Sidebar = () => {
           )}
           onClick={handleSignOut}
         >
-          <LogOut size={18} />
+          <LogOut size={16} />
           <span className={cn(
             "ml-3 transition-all duration-300 whitespace-nowrap",
             isExpanded ? "opacity-100 translate-x-0" : "opacity-0 absolute -translate-x-4 pointer-events-none"

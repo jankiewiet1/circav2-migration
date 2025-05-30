@@ -64,12 +64,16 @@ export interface DashboardData {
 }
 
 export interface DashboardFilters {
-  dateRange: {
+  dateRange?: {
     from: Date;
     to: Date;
   };
+  period?: string;
   scope?: 1 | 2 | 3 | 'all';
+  scopes?: number[];
   category?: string;
+  categories?: string[];
+  company?: string;
 }
 
 export function useDashboardData(companyId: string | undefined, filters: DashboardFilters) {
@@ -227,8 +231,8 @@ function processEntriesData(entriesData: any[], filters: DashboardFilters): Dash
   }> = {};
   
   // Get the date range from filters
-  const startDate = filters.dateRange.from;
-  const endDate = filters.dateRange.to;
+  const startDate = filters.dateRange?.from || new Date(currentYear - 2, 0, 1);
+  const endDate = filters.dateRange?.to || new Date();
   
   // Initialize all months in the range
   let currentDate = new Date(startDate);
