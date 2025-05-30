@@ -338,10 +338,10 @@ export default function ChatGPTStyleCalculator() {
 
   return (
     <>
-      <section className="min-h-screen bg-white flex flex-col relative overflow-hidden pt-20">
+      <section className="min-h-screen bg-white flex flex-col relative overflow-hidden pt-16">
         {/* Chat Messages Container - Only visible when chatting */}
         {messages.filter(m => m.type === 'user').length > 0 && (
-          <div className="flex-1 overflow-auto px-4 py-6 pt-24">
+          <div className="flex-1 overflow-auto px-4 py-6 pt-8">
             <div className="max-w-3xl mx-auto space-y-6">
               {messages.map((message) => (
                 <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -397,7 +397,7 @@ export default function ChatGPTStyleCalculator() {
 
         {/* Welcome Screen - Only visible when no messages */}
         {messages.filter(m => m.type === 'user').length === 0 && (
-          <div className="flex-1 flex items-center justify-center px-4 pt-24">
+          <div className="flex-1 flex items-center justify-center px-4 pt-8">
             <div className="w-full max-w-4xl text-center">
               {/* Massive Centered Logo */}
               <div className="flex items-center justify-center mb-8">
