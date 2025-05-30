@@ -104,7 +104,7 @@ CREATE TRIGGER update_emission_calc_rag_updated_at
 -- Create function for vector similarity search
 CREATE OR REPLACE FUNCTION find_similar_emission_factors(
     query_embedding vector(1536),
-    similarity_threshold DECIMAL DEFAULT 0.7,
+    similarity_threshold DECIMAL DEFAULT 0.8, -- Increased from 0.7 to 0.8 for better precision
     max_results INTEGER DEFAULT 5
 )
 RETURNS TABLE (
@@ -130,8 +130,9 @@ BEGIN
         (1 - (ef.embedding <=> query_embedding))::DECIMAL(5,4) as similarity
     FROM emission_factor_db ef
     WHERE ef.embedding IS NOT NULL
+        AND ef.total_factor > 0 -- Ensure valid factors
         AND (1 - (ef.embedding <=> query_embedding)) >= similarity_threshold
-    ORDER BY ef.embedding <=> query_embedding
+    ORDER BY ef.embedding <=> query_embedding, ef.total_factor DESC -- Order by similarity first, then by factor value
     LIMIT max_results;
 END;
 $$ LANGUAGE plpgsql; 
