@@ -23,9 +23,9 @@ export default defineConfig(({ mode }) => ({
     // Fix for OpenAI client in browser
     'process.env': {},
     'process.env.NODE_ENV': JSON.stringify(mode),
+    // ⚠️ SECURITY: Only expose VITE_ prefixed variables to frontend
+    // Backend-only variables (OPENAI_API_KEY, OPENAI_ASSISTANT_ID) are intentionally excluded
     'process.env.VITE_OPENAI_API_KEY': JSON.stringify(process.env.VITE_OPENAI_API_KEY || ''),
     'process.env.VITE_OPENAI_ASSISTANT_ID': JSON.stringify(process.env.VITE_OPENAI_ASSISTANT_ID || ''),
-    'process.env.OPENAI_API_KEY': JSON.stringify(process.env.OPENAI_API_KEY || ''),
-    'process.env.OPENAI_ASSISTANT_ID': JSON.stringify(process.env.OPENAI_ASSISTANT_ID || ''),
   },
 }));

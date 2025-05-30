@@ -1,8 +1,13 @@
 import axios from 'axios';
 
-// Load API key from environment variable
-const CLIMATIQ_API_KEY = import.meta.env.VITE_CLIMATIQ_API_KEY || '2EJNHK4KN957591GX5J7Q6ZR9M'; // Fallback to test key
+// Load API key from environment variable - NO HARDCODED FALLBACKS for security
+const CLIMATIQ_API_KEY = import.meta.env.VITE_CLIMATIQ_API_KEY || '';
 const CLIMATIQ_API_URL = 'https://api.climatiq.io';
+
+// Validate API key is available
+if (!CLIMATIQ_API_KEY) {
+  console.warn('⚠️ CLIMATIQ_API_KEY not found in environment variables. Climatiq features will be disabled.');
+}
 
 // Create a reusable Axios instance with the Climatiq API configuration
 export const climatiqClient = axios.create({
@@ -18,7 +23,11 @@ export const climatiqClient = axios.create({
 climatiqClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('Climatiq API Error:', error.response?.data || error.message);
+    if (error.response?.status === 401) {
+      console.error('❌ Climatiq API Authentication failed. Check your VITE_CLIMATIQ_API_KEY environment variable.');
+    } else {
+      console.error('Climatiq API Error:', error.response?.data || error.message);
+    }
     return Promise.reject(error);
   }
 );

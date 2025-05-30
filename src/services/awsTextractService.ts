@@ -451,20 +451,13 @@ export class AWSTextractService {
 
   /**
    * Create service instance from environment variables
+   * ⚠️ SECURITY WARNING: AWS credentials should NEVER be in frontend code
+   * This method is disabled for security reasons - use serverless functions instead
    */
   static fromEnvironment(): AWSTextractService {
-    const accessKeyId = import.meta.env.VITE_AWS_ACCESS_KEY_ID;
-    const secretAccessKey = import.meta.env.VITE_AWS_SECRET_ACCESS_KEY;
-    const region = import.meta.env.VITE_AWS_REGION || 'us-east-1';
-    
-    if (!accessKeyId || !secretAccessKey) {
-      throw new Error('AWS credentials not found in environment variables');
-    }
-    
-    return new AWSTextractService({
-      accessKeyId,
-      secretAccessKey,
-      region,
-    });
+    throw new Error(
+      '🚫 AWS credentials cannot be used in frontend for security reasons. ' +
+      'Use the serverless function /functions/v1/process-ai-data instead.'
+    );
   }
 } 
