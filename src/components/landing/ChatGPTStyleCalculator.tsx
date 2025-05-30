@@ -331,9 +331,9 @@ export default function ChatGPTStyleCalculator() {
   };
 
   const examplePrompts = [
-    t('chatbot.example1', '100L diesel for vehicles'),
-    t('chatbot.example2', '500 kWh electricity'),
-    t('chatbot.example3', 'What is Scope 3 emissions?')
+    t('chatbot.example1', 'Calculate CO₂ for 100L diesel fuel'),
+    t('chatbot.example2', 'Emissions from 500 kWh electricity usage'),
+    t('chatbot.example3', 'Carbon footprint of 1000km flight')
   ];
 
   return (
@@ -406,7 +406,8 @@ export default function ChatGPTStyleCalculator() {
               
               {/* Title and Tagline */}
               <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-4">Circa</h1>
-              <p className="text-lg md:text-xl lg:text-2xl text-gray-600 font-medium mb-16">{t('chatbot.tagline', 'One click circularity')}</p>
+              <p className="text-lg md:text-xl lg:text-2xl text-gray-600 font-medium mb-6">{t('chatbot.tagline', 'One click circularity')}</p>
+              <p className="text-base md:text-lg text-gray-500 mb-16 max-w-2xl mx-auto">{t('chatbot.calculatorDescription', 'Ask me to calculate CO₂ emissions for any activity. I use verified emission factors from trusted databases.')}</p>
               
               {/* Example Cards - Smaller and More Centralized */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-2xl mx-auto">
@@ -437,7 +438,7 @@ export default function ChatGPTStyleCalculator() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder={t('chatbot.messagePlaceholder', 'Message Circa')}
+                  placeholder={t('chatbot.messagePlaceholder', 'Ask me to calculate emissions, e.g. "100L diesel" or "500 kWh electricity"')}
                   className="flex-1 border-0 focus:ring-0 text-base bg-transparent placeholder-gray-500 focus:outline-none"
                   disabled={isCalculating}
                 />
