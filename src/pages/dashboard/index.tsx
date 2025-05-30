@@ -311,27 +311,39 @@ const TimeSeriesChart = ({ data, type = 'line', filters }: {
 }) => {
   const ChartComponent = type === 'area' ? AreaChart : LineChart;
   
-  // Filter data based on selected scopes
+  // Filter data based on selected scopes with error handling
   const filteredData = useMemo(() => {
+    if (!data || data.length === 0) return [];
     if (!filters.scopes || filters.scopes.length === 0) return data;
     
     return data.map(item => {
-      const filteredItem: any = { month: item.month };
+      if (!item) return { month: 'Unknown' };
       
-      if (filters.scopes.includes(1)) {
+      const filteredItem: any = { month: item.month || 'Unknown' };
+      
+      if (filters.scopes.includes(1) && typeof item["Scope 1"] === 'number') {
         filteredItem["Scope 1"] = item["Scope 1"];
       }
-      if (filters.scopes.includes(2)) {
+      if (filters.scopes.includes(2) && typeof item["Scope 2"] === 'number') {
         filteredItem["Scope 2"] = item["Scope 2"];
       }
-      if (filters.scopes.includes(3)) {
+      if (filters.scopes.includes(3) && typeof item["Scope 3"] === 'number') {
         filteredItem["Scope 3"] = item["Scope 3"];
       }
       
       return filteredItem;
     });
   }, [data, filters.scopes]);
-  
+
+  // Don't render if no valid data
+  if (!filteredData || filteredData.length === 0) {
+    return (
+      <div className="h-[350px] flex items-center justify-center text-gray-500">
+        No emissions data available for the selected period
+      </div>
+    );
+  }
+
   return (
     <ResponsiveContainer width="100%" height={350}>
       <ChartComponent data={filteredData}>
@@ -385,39 +397,71 @@ const TimeSeriesChart = ({ data, type = 'line', filters }: {
   );
 };
 
-const CategoryBarChart = ({ data }: { data: any[] }) => (
-  <ResponsiveContainer width="100%" height={300}>
-    <BarChart data={data} layout="horizontal">
-      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-      <XAxis type="number" tick={{ fontSize: 12 }} />
-      <YAxis 
-        dataKey="category" 
-        type="category" 
-        tick={{ fontSize: 12 }}
-        width={100}
-      />
-      <Tooltip 
-        contentStyle={{ 
-          backgroundColor: 'white', 
-          border: '1px solid #e0e0e0',
-          borderRadius: '8px'
-        }}
-      />
-      <Bar dataKey="emissions" fill="#0E5D40" radius={[0, 4, 4, 0]} />
-    </BarChart>
-  </ResponsiveContainer>
-);
+const CategoryBarChart = ({ data }: { data: any[] }) => {
+  // Don't render if no valid data
+  if (!data || data.length === 0) {
+    return (
+      <div className="h-[300px] flex items-center justify-center text-gray-500">
+        No category data available
+      </div>
+    );
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height={300}>
+      <BarChart data={data} layout="horizontal">
+        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+        <XAxis type="number" tick={{ fontSize: 12 }} />
+        <YAxis 
+          dataKey="category" 
+          type="category" 
+          tick={{ fontSize: 12 }}
+          width={100}
+        />
+        <Tooltip 
+          contentStyle={{ 
+            backgroundColor: 'white', 
+            border: '1px solid #e0e0e0',
+            borderRadius: '8px'
+          }}
+        />
+        <Bar dataKey="emissions" fill="#0E5D40" radius={[0, 4, 4, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+};
 
 const ScopeDonutChart = ({ data, filters }: { data: any[]; filters: DashboardFilters }) => {
-  // Filter data based on selected scopes
+  // Filter data based on selected scopes with proper error handling
   const filteredData = useMemo(() => {
+    if (!data || data.length === 0) return [];
     if (!filters.scopes || filters.scopes.length === 0) return data;
     
     return data.filter(item => {
-      const scopeNumber = parseInt(item.name.split(' ')[1]);
-      return filters.scopes.includes(scopeNumber);
+      // Add null checks for item and item.name
+      if (!item || !item.name || typeof item.name !== 'string') {
+        console.warn('Invalid scope data item:', item);
+        return false;
+      }
+      
+      try {
+        const scopeNumber = parseInt(item.name.split(' ')[1]);
+        return !isNaN(scopeNumber) && filters.scopes.includes(scopeNumber);
+      } catch (error) {
+        console.warn('Error parsing scope number from:', item.name, error);
+        return false;
+      }
     });
   }, [data, filters.scopes]);
+
+  // Don't render if no valid data
+  if (!filteredData || filteredData.length === 0) {
+    return (
+      <div className="h-[280px] flex items-center justify-center text-gray-500">
+        No scope data available
+      </div>
+    );
+  }
 
   return (
     <ResponsiveContainer width="100%" height={280}>
@@ -432,7 +476,7 @@ const ScopeDonutChart = ({ data, filters }: { data: any[]; filters: DashboardFil
           dataKey="value"
         >
           {filteredData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={SCOPE_COLORS[entry.name as keyof typeof SCOPE_COLORS]} />
+            <Cell key={`cell-${index}`} fill={SCOPE_COLORS[entry.name as keyof typeof SCOPE_COLORS] || '#888'} />
           ))}
         </Pie>
         <Tooltip />
@@ -460,6 +504,17 @@ export default function Dashboard() {
 
   // Use real dashboard data with automatic updates
   const { data: dashboardData, loading: isLoading, error } = useDashboardData(company?.id, filters);
+  
+  // Debug logging to understand data structure
+  useEffect(() => {
+    if (dashboardData) {
+      console.log('Dashboard data structure:', {
+        timeSeries: dashboardData.timeSeries?.monthly?.slice(0, 2),
+        scopeBreakdown: dashboardData.breakdowns?.byScope,
+        categoryBreakdown: dashboardData.breakdowns?.byCategory?.slice(0, 3)
+      });
+    }
+  }, [dashboardData]);
   
   // Get entry match status for data quality panel
   const { counts: matchCounts, loading: matchLoading } = useEntryMatchStatus(company?.id);
