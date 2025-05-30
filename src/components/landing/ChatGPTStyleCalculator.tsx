@@ -400,17 +400,17 @@ export default function ChatGPTStyleCalculator() {
           <div className="flex-1 flex items-center justify-center px-4 pt-8">
             <div className="w-full max-w-4xl text-center">
               {/* Massive Centered Logo */}
-              <div className="flex items-center justify-center mb-8">
-                <Logo className="w-24 h-24 md:w-32 md:h-32 lg:w-40 lg:h-40" withText={false} isLink={false} />
+              <div className="flex items-center justify-center mb-6">
+                <Logo className="w-20 h-20 md:w-24 md:h-24 lg:w-32 lg:h-32" withText={false} isLink={false} />
               </div>
               
               {/* Title and Tagline */}
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-4">Circa</h1>
-              <p className="text-lg md:text-xl lg:text-2xl text-gray-600 font-medium mb-6">{t('chatbot.tagline', 'One click circularity')}</p>
-              <p className="text-base md:text-lg text-gray-500 mb-16 max-w-2xl mx-auto">{t('chatbot.calculatorDescription', 'Ask me to calculate CO₂ emissions for any activity. I use verified emission factors from trusted databases.')}</p>
+              <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-3">Circa</h1>
+              <p className="text-base md:text-lg lg:text-xl text-gray-600 font-medium mb-4">{t('chatbot.tagline', 'One click circularity')}</p>
+              <p className="text-sm md:text-base text-gray-500 mb-12 max-w-2xl mx-auto">{t('chatbot.calculatorDescription', 'Ask me to calculate CO₂ emissions for any activity. I use verified emission factors from trusted databases.')}</p>
               
               {/* Example Cards - Smaller and More Centralized */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-2xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-2xl mx-auto mb-8">
                 {examplePrompts.map((example, index) => (
                   <button
                     key={index}
