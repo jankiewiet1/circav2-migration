@@ -141,15 +141,27 @@ export default function ChatGPTStyleCalculator() {
     const userMessages = messages.filter(m => m.type === 'user');
     const botResponses = messages.filter(m => m.type === 'bot' || m.type === 'result');
     
+    console.log('Conversion card check:', {
+      userMessages: userMessages.length,
+      botResponses: botResponses.length,
+      isCalculating,
+      showConversionCard
+    });
+    
     // Show after 5 seconds if user asked 1 or 2 questions and got responses
-    if (userMessages.length >= 1 && userMessages.length <= 2 && botResponses.length > userMessages.length && !isCalculating) {
+    if (userMessages.length >= 1 && userMessages.length <= 2 && botResponses.length >= userMessages.length && !isCalculating && !showConversionCard) {
+      console.log('Setting timer for conversion card...');
       const timer = setTimeout(() => {
+        console.log('Showing conversion card now!');
         setShowConversionCard(true);
       }, 5000);
       
-      return () => clearTimeout(timer);
+      return () => {
+        console.log('Clearing conversion card timer');
+        clearTimeout(timer);
+      };
     }
-  }, [messages, isCalculating]);
+  }, [messages, isCalculating, showConversionCard]);
 
   const addMessage = (message: Omit<ChatMessage, 'id' | 'timestamp'>) => {
     const newMessage: ChatMessage = {
