@@ -68,6 +68,7 @@ export default function ChatGPTStyleCalculator() {
   const [showConversionCard, setShowConversionCard] = useState(false);
   const [showCalendlyModal, setShowCalendlyModal] = useState(false);
   const [questionCount, setQuestionCount] = useState(0);
+  const [hasShownDemoPopup, setHasShownDemoPopup] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -75,6 +76,7 @@ export default function ChatGPTStyleCalculator() {
   useEffect(() => {
     setMessages([]);
     setQuestionCount(0);
+    setHasShownDemoPopup(false);
   }, [t]);
 
   // Load Calendly script
@@ -136,7 +138,7 @@ export default function ChatGPTStyleCalculator() {
     inputRef.current?.focus();
   }, []);
 
-  // Show conversion card logic: after 1 or 2 questions + 5 seconds
+  // Show conversion card logic: after 1 or 2 questions + 5 seconds (only once per visit)
   useEffect(() => {
     const userMessages = messages.filter(m => m.type === 'user');
     const botResponses = messages.filter(m => m.type === 'bot' || m.type === 'result');
@@ -145,15 +147,17 @@ export default function ChatGPTStyleCalculator() {
       userMessages: userMessages.length,
       botResponses: botResponses.length,
       isCalculating,
-      showConversionCard
+      showConversionCard,
+      hasShownDemoPopup
     });
     
-    // Show after 5 seconds if user asked 1 or 2 questions and got responses
-    if (userMessages.length >= 1 && userMessages.length <= 2 && botResponses.length >= userMessages.length && !isCalculating && !showConversionCard) {
+    // Show after 5 seconds if user asked 1 or 2 questions and got responses (only if not shown before)
+    if (userMessages.length >= 1 && userMessages.length <= 2 && botResponses.length >= userMessages.length && !isCalculating && !showConversionCard && !hasShownDemoPopup) {
       console.log('Setting timer for conversion card...');
       const timer = setTimeout(() => {
         console.log('Showing conversion card now!');
         setShowConversionCard(true);
+        setHasShownDemoPopup(true);
       }, 5000);
       
       return () => {
@@ -161,7 +165,7 @@ export default function ChatGPTStyleCalculator() {
         clearTimeout(timer);
       };
     }
-  }, [messages, isCalculating, showConversionCard]);
+  }, [messages, isCalculating, showConversionCard, hasShownDemoPopup]);
 
   const addMessage = (message: Omit<ChatMessage, 'id' | 'timestamp'>) => {
     const newMessage: ChatMessage = {
@@ -187,6 +191,7 @@ export default function ChatGPTStyleCalculator() {
     if (questionCount >= 2) {
       toast.error(t('chatbot.questionLimit', 'You\'ve reached the maximum of 2 questions. Book a demo to continue!'));
       setShowConversionCard(true);
+      setHasShownDemoPopup(true);
       return;
     }
 
