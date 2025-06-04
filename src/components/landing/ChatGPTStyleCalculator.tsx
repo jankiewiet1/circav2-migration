@@ -136,19 +136,13 @@ export default function ChatGPTStyleCalculator() {
     inputRef.current?.focus();
   }, []);
 
-  // Show conversion card logic: after 2 questions OR after 1 question + 5 seconds
+  // Show conversion card logic: after 1 or 2 questions + 5 seconds
   useEffect(() => {
     const userMessages = messages.filter(m => m.type === 'user');
     const botResponses = messages.filter(m => m.type === 'bot' || m.type === 'result');
     
-    // Show immediately after 2 questions
-    if (userMessages.length >= 2 && botResponses.length > userMessages.length && !isCalculating) {
-      setShowConversionCard(true);
-      return;
-    }
-    
-    // Show after 5 seconds if user asked 1 question and got a response
-    if (userMessages.length === 1 && botResponses.length > 1 && !isCalculating) {
+    // Show after 5 seconds if user asked 1 or 2 questions and got responses
+    if (userMessages.length >= 1 && userMessages.length <= 2 && botResponses.length > userMessages.length && !isCalculating) {
       const timer = setTimeout(() => {
         setShowConversionCard(true);
       }, 5000);
@@ -495,6 +489,7 @@ export default function ChatGPTStyleCalculator() {
                 <button
                   onClick={scrollToNextSection}
                   className="bg-circa-green-light text-circa-green-dark rounded-full px-6 py-3 shadow-lg hover:shadow-xl transition-all duration-200 border border-circa-green hover:scale-105"
+                  style={{ color: '#43b97f' }}
                   aria-label={t('chatbot.scrollDown', 'Scroll down to see more')}
                 >
                   <div className="flex items-center space-x-2">
@@ -509,6 +504,7 @@ export default function ChatGPTStyleCalculator() {
                   <button
                     onClick={scrollToNextSection}
                     className="bg-circa-green-light text-circa-green-dark rounded-full px-4 py-2 shadow-md hover:shadow-lg transition-all duration-200 border border-circa-green hover:scale-105 text-xs"
+                    style={{ color: '#43b97f' }}
                   >
                     <div className="flex items-center space-x-1">
                       <span className="font-medium">{t('chatbot.exploreMore', 'Explore more')}</span>
