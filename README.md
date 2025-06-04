@@ -1,4 +1,50 @@
-# circav2-migration
+# CircaV2 Migration - Carbon Accounting Platform
+
+A modern carbon accounting platform built with React, TypeScript, and Supabase.
+
+## Environment Setup
+
+### Required Environment Variables
+
+Copy `env.example` to `.env` and fill in your actual values:
+
+```bash
+cp env.example .env
+```
+
+Required variables:
+- `VITE_SUPABASE_URL` - Your Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` - Your Supabase anonymous/public key
+- `VITE_SUPABASE_SERVICE_ROLE_KEY` - Your Supabase service role key (for scripts only)
+- `OPENAI_API_KEY` - Your OpenAI API key for emission calculations
+
+### Security Note
+
+⚠️ **Never commit API keys to the repository!** 
+
+All sensitive keys have been moved to environment variables. The `.env` file is already in `.gitignore` to prevent accidental commits.
+
+## Development
+
+```bash
+npm install
+npm run dev
+```
+
+## Features
+
+- **Emission Calculations**: RAG-based and OpenAI-powered emission factor matching
+- **Data Traceability**: Complete audit trail of all calculations
+- **Dashboard**: Real-time carbon accounting insights
+- **File Upload**: CSV import with intelligent data processing
+- **Multi-scope Support**: Scope 1, 2, and 3 emissions tracking
+
+## Architecture
+
+- **Frontend**: React + TypeScript + Vite
+- **Backend**: Supabase (PostgreSQL + Edge Functions)
+- **AI**: OpenAI GPT-4 + RAG system for emission factors
+- **Styling**: Tailwind CSS + shadcn/ui components
 
 Updated for Vercel deployment on May 20, 2024.
 
