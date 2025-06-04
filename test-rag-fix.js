@@ -1,8 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 
+
+// Environment variables check
+if (!process.env.SUPABASE_ANON_KEY) {
+  console.error("❌ SUPABASE_ANON_KEY environment variable is required");
+  console.error("Please set it in your environment");
+  process.exit(1);
+}
 const supabase = createClient(
   'https://vfdbyvnjhimmnbyhxyun.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmZGJ5dm5qaGltbW5ieWh4eXVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjk3NzUyNTksImV4cCI6MjA0NTM1MTI1OX0.1gVVPvhITRf_hAaIGVZMsKVOjNqKB5VKaNnp-ExCGns'
+  'process.env.SUPABASE_ANON_KEY'
 );
 
 async function testRAGSystem() {
@@ -32,7 +39,7 @@ async function testRAGSystem() {
     const response = await fetch('https://vfdbyvnjhimmnbyhxyun.supabase.co/functions/v1/rag-emissions-calculator', {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmZGJ5dm5qaGltbW5ieWh4eXVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjk3NzUyNTksImV4cCI6MjA0NTM1MTI1OX0.1gVVPvhITRf_hAaIGVZMsKVOjNqKB5VKaNnp-ExCGns',
+        'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || 'your-anon-key-here'}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({

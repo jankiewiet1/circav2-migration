@@ -1,8 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 
+
+// Environment variables check
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.error("❌ SUPABASE_SERVICE_ROLE_KEY environment variable is required");
+  console.error("Please set it in your environment");
+  process.exit(1);
+}
+
 const supabaseServiceRole = createClient(
   'https://vfdbyvnjhimmnbyhxyun.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmZGJ5dm5qaGltbW5ieWh4eXVuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcyOTc3NTI1OSwiZXhwIjoyMDQ1MzUxMjU5fQ.5sM6VTXMfuMxRaHYnT1YEWBqz-t9vcMKj9PG5S_VRgE'
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 async function testSourceAndUnitFix() {
@@ -14,7 +22,7 @@ async function testSourceAndUnitFix() {
     const ragResponse = await fetch('https://vfdbyvnjhimmnbyhxyun.supabase.co/functions/v1/rag-emissions-calculator', {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmZGJ5dm5qaGltbW5ieWh4eXVuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcyOTc3NTI1OSwiZXhwIjoyMDQ1MzUxMjU5fQ.5sM6VTXMfuMxRaHYnT1YEWBqz-t9vcMKj9PG5S_VRgE',
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({

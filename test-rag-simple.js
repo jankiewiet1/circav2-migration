@@ -1,5 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
+
+// Environment variables check
+if (!process.env.SUPABASE_ANON_KEY) {
+  console.error("❌ SUPABASE_ANON_KEY environment variable is required");
+  console.error("Please set it in your environment");
+  process.exit(1);
+}
 async function testRAG() {
   console.log('🧪 Testing RAG function with proper validation ranges...\n');
   
@@ -8,7 +15,7 @@ async function testRAG() {
     const response = await fetch('https://vfdbyvnjhimmnbyhxyun.supabase.co/functions/v1/rag-emissions-calculator', {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmZGJ5dm5qaGltbW5ieWh4eXVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ2Mzk2MTQsImV4cCI6MjA2MDIxNTYxNH0.DC5NE2wi8_i24-jx1Uignlem0HL2h4ocZ8OsJD_qeiU',
+        'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || 'your-anon-key-here'}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({

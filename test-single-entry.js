@@ -1,8 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client
+
+// Environment variables check
+if (!process.env.SUPABASE_ANON_KEY) {
+  console.error("❌ SUPABASE_ANON_KEY environment variable is required");
+  console.error("Please set it in your environment");
+  process.exit(1);
+}
 const supabaseUrl = 'https://vfdbyvnjhimmnbyhxyun.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmZGJ5dm5qaGltbW5ieWh4eXVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ1MzE1NzQsImV4cCI6MjA1MDEwNzU3NH0.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || 'your-anon-key-here';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function testSingleEntry() {

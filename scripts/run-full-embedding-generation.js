@@ -1,6 +1,6 @@
 // Script to process all emission factor embeddings using Supabase edge function
 const SUPABASE_URL = "https://vfdbyvnjhimmnbyhxyun.supabase.co";
-const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmZGJ5dm5qaGltbW5ieWh4eXVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ2Mzk2MTQsImV4cCI6MjA2MDIxNTYxNH0.DC5NE2wi8_i24-jx1Uignlem0HL2h4ocZ8OsJD_qeiU";
+const ANON_KEY = "process.env.SUPABASE_ANON_KEY";
 
 const BATCH_SIZE = 1000; // As requested
 const TOTAL_RECORDS = 45024; // Known from previous check

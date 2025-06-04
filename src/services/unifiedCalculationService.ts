@@ -80,8 +80,14 @@ interface BatchCalculationSummary {
  * - Unified interface for all calculation methods
  */
 export class UnifiedCalculationService {
-  private readonly SUPABASE_URL = "https://vfdbyvnjhimmnbyhxyun.supabase.co";
-  private readonly SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmZGJ5dm5qaGltbW5ieWh4eXVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ2Mzk2MTQsImV4cCI6MjA2MDIxNTYxNH0.DC5NE2wi8_i24-jx1Uignlem0HL2h4ocZ8OsJD_qeiU";
+  private readonly SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://vfdbyvnjhimmnbyhxyun.supabase.co";
+  private readonly SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  
+  constructor() {
+    if (!this.SUPABASE_ANON_KEY) {
+      throw new Error('VITE_SUPABASE_ANON_KEY environment variable is required');
+    }
+  }
   
   private ragSimilarityThreshold = 0.75; // Minimum similarity for RAG to be considered reliable
   private maxRetries = 2;
