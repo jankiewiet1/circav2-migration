@@ -67,12 +67,14 @@ export default function ChatGPTStyleCalculator() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [showConversionCard, setShowConversionCard] = useState(false);
   const [showCalendlyModal, setShowCalendlyModal] = useState(false);
+  const [questionCount, setQuestionCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Initialize and update messages when language changes
   useEffect(() => {
     setMessages([]);
+    setQuestionCount(0);
   }, [t]);
 
   // Load Calendly script
@@ -134,13 +136,19 @@ export default function ChatGPTStyleCalculator() {
     inputRef.current?.focus();
   }, []);
 
-  // Show conversion card with delay after user gets a response
+  // Show conversion card logic: after 2 questions OR after 1 question + 5 seconds
   useEffect(() => {
     const userMessages = messages.filter(m => m.type === 'user');
     const botResponses = messages.filter(m => m.type === 'bot' || m.type === 'result');
     
-    // Show card 5 seconds after user gets their first response
-    if (userMessages.length > 0 && botResponses.length > 1 && !isCalculating) {
+    // Show immediately after 2 questions
+    if (userMessages.length >= 2 && botResponses.length > userMessages.length && !isCalculating) {
+      setShowConversionCard(true);
+      return;
+    }
+    
+    // Show after 5 seconds if user asked 1 question and got a response
+    if (userMessages.length === 1 && botResponses.length > 1 && !isCalculating) {
       const timer = setTimeout(() => {
         setShowConversionCard(true);
       }, 5000);
@@ -169,7 +177,14 @@ export default function ChatGPTStyleCalculator() {
       return;
     }
 
-    // Add user message
+    // Check if user has reached the 2-question limit
+    if (questionCount >= 2) {
+      toast.error(t('chatbot.questionLimit', 'You\'ve reached the maximum of 2 questions. Book a demo to continue!'));
+      setShowConversionCard(true);
+      return;
+    }
+
+    // Add user message and increment question count
     addMessage({
       type: 'user',
       content: input
@@ -178,6 +193,7 @@ export default function ChatGPTStyleCalculator() {
     const userInput = input;
     setInput('');
     setIsCalculating(true);
+    setQuestionCount(prev => prev + 1);
 
     try {
       // First, try to determine if this is an emission calculation request or a general question
@@ -431,6 +447,18 @@ export default function ChatGPTStyleCalculator() {
         {/* Input Area - Fixed at Bottom */}
         <div className="bg-white p-4 lg:p-6">
           <div className="max-w-3xl mx-auto">
+            {/* Question limit indicator */}
+            {questionCount > 0 && questionCount < 2 && (
+              <div className="text-center mb-3">
+                <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                  {questionCount === 1 ? 
+                    t('chatbot.oneQuestionLeft', '1 question remaining') : 
+                    t('chatbot.twoQuestionsLeft', '2 questions remaining')
+                  }
+                </span>
+              </div>
+            )}
+            
             <form onSubmit={(e) => { e.preventDefault(); handleCalculate(e); }} className="relative">
               <div className="flex items-center bg-white border-2 border-gray-300 rounded-2xl px-4 lg:px-6 py-3 lg:py-4 shadow-lg focus-within:border-circa-green transition-all duration-200">
                 <Input
@@ -438,15 +466,19 @@ export default function ChatGPTStyleCalculator() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder={t('chatbot.messagePlaceholder', 'Ask me to calculate emissions, e.g. "100L diesel" or "500 kWh electricity"')}
+                  placeholder={
+                    questionCount >= 2 
+                      ? t('chatbot.questionLimitReached', 'Question limit reached - Book a demo to continue!')
+                      : t('chatbot.messagePlaceholder', 'Ask me to calculate emissions, e.g. "100L diesel" or "500 kWh electricity"')
+                  }
                   className="flex-1 border-0 focus:ring-0 text-base bg-transparent placeholder-gray-500 focus:outline-none"
-                  disabled={isCalculating}
+                  disabled={isCalculating || questionCount >= 2}
                 />
                 <Button
                   type="submit"
-                  disabled={isCalculating || !input.trim()}
+                  disabled={isCalculating || !input.trim() || questionCount >= 2}
                   size="sm"
-                  className="bg-circa-green hover:bg-circa-green-dark text-black rounded-xl px-4 py-2 ml-3 transition-colors"
+                  className="bg-circa-green hover:bg-circa-green-dark text-black rounded-xl px-4 py-2 ml-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isCalculating ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -462,7 +494,7 @@ export default function ChatGPTStyleCalculator() {
               {messages.filter(m => m.type === 'user').length === 0 ? (
                 <button
                   onClick={scrollToNextSection}
-                  className="bg-circa-green-light text-circa-green rounded-full px-6 py-3 shadow-lg hover:shadow-xl transition-all duration-200 border border-circa-green hover:scale-105"
+                  className="bg-circa-green-light text-circa-green-dark rounded-full px-6 py-3 shadow-lg hover:shadow-xl transition-all duration-200 border border-circa-green hover:scale-105"
                   aria-label={t('chatbot.scrollDown', 'Scroll down to see more')}
                 >
                   <div className="flex items-center space-x-2">
@@ -476,7 +508,7 @@ export default function ChatGPTStyleCalculator() {
                 }`}>
                   <button
                     onClick={scrollToNextSection}
-                    className="bg-circa-green-light text-circa-green rounded-full px-4 py-2 shadow-md hover:shadow-lg transition-all duration-200 border border-circa-green hover:scale-105 text-xs"
+                    className="bg-circa-green-light text-circa-green-dark rounded-full px-4 py-2 shadow-md hover:shadow-lg transition-all duration-200 border border-circa-green hover:scale-105 text-xs"
                   >
                     <div className="flex items-center space-x-1">
                       <span className="font-medium">{t('chatbot.exploreMore', 'Explore more')}</span>
@@ -502,7 +534,7 @@ export default function ChatGPTStyleCalculator() {
               {/* Close button */}
               <button
                 onClick={() => setShowConversionCard(false)}
-                className="absolute top-4 right-4 text-circa-green hover:text-circa-green-dark transition-colors rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-circa-green-light"
+                className="absolute top-4 right-4 text-white hover:text-gray-200 transition-colors rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-white bg-gray-400 hover:bg-gray-500"
                 aria-label="Close"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -560,7 +592,7 @@ export default function ChatGPTStyleCalculator() {
               </div>
               <button 
                 onClick={() => setShowCalendlyModal(false)}
-                className="text-circa-green hover:text-circa-green-dark transition-colors rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-circa-green-light"
+                className="text-white hover:text-gray-200 transition-colors rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-white bg-gray-400 hover:bg-gray-500"
                 aria-label="Close modal"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
