@@ -325,6 +325,14 @@ export const CSVUploader: React.FC<CSVUploaderProps> = ({ onUploadComplete }) =>
         return;
       }
 
+      // Check for future dates
+      const today = new Date();
+      today.setHours(23, 59, 59, 999); // Set to end of today
+      if (parsedDate > today) {
+        errors.push(`Row ${rowNum}: Date cannot be in the future. Found: ${parsedDate.toISOString().split('T')[0]}`);
+        return;
+      }
+
       // Check GHG category/scope
       const ghgCategory = row[headers[parseInt(columnMapping.ghg_category)]];
       if (!ghgCategory || ghgCategory.trim() === '') {

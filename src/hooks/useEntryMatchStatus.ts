@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { unifiedCalculationService } from '@/services/unifiedCalculationService';
 
 interface MatchStatusCounts {
   matched: number;
@@ -27,25 +28,37 @@ export function useEntryMatchStatus(companyId: string | undefined) {
       setError(null);
 
       try {
-        // First, get all emission entries
+        // Get total emission entries count
         const { data: entriesData, error: entriesError } = await supabase
           .from('emission_entries')
-          .select('id, match_status')
+          .select('id')
           .eq('company_id', companyId);
 
         if (entriesError) {
           throw entriesError;
         }
 
-        if (!entriesData) {
-          setCounts({ matched: 0, unmatched: 0, total: 0 });
-          return;
-        }
+        const total = entriesData?.length || 0;
 
-        // Count matched vs unmatched
-        const total = entriesData.length;
-        const matched = entriesData.filter(entry => entry.match_status === 'matched').length;
-        const unmatched = total - matched;
+        // Get unified calculations (RAG + Assistant) 
+        const calculations = await unifiedCalculationService.fetchAllCalculations(companyId);
+        
+        // Count unique entry_ids that have calculations
+        const uniqueCalculatedEntries = new Set(
+          calculations.map(calc => calc.entry_id).filter(Boolean)
+        );
+        const matched = uniqueCalculatedEntries.size;
+        const unmatched = Math.max(0, total - matched);
+
+        console.log('📊 Match status calculation (unified):', {
+          total,
+          matched,
+          unmatched,
+          totalCalculations: calculations.length,
+          ragCalculations: calculations.filter(c => c.calculation_method === 'RAG').length,
+          openaiCalculations: calculations.filter(c => c.calculation_method === 'OPENAI').length,
+          uniqueEntries: uniqueCalculatedEntries.size
+        });
 
         setCounts({
           matched,

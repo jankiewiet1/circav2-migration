@@ -31,7 +31,6 @@ import {
   Zap,
   AlertTriangle,
   Play,
-  History,
   Trash2,
   ArrowUpDown,
   ArrowUp,
@@ -44,6 +43,8 @@ import { format } from 'date-fns';
 import { assistantCalculator } from '@/services/assistantEmissionCalculator';
 import { hybridEmissionCalculator } from '@/services/hybridEmissionCalculator';
 import { unifiedCalculationService, UnifiedCalculationEntry, CalculationSummary } from '@/services/unifiedCalculationService';
+import { extractCalculationSource, extractEmissionFactorInfo, extractCalculationMetadata } from '@/utils/sourceExtractor';
+import { getStandardCategoryName } from '@/utils/ghgCategoryMapper';
 
 interface RawDataEntry {
   id: string;
@@ -59,17 +60,6 @@ interface RawDataEntry {
 }
 
 interface CalculatedDataEntry extends UnifiedCalculationEntry {}
-
-interface CalculationRun {
-  id: string;
-  timestamp: string;
-  user: string;
-  method: string;
-  entries_processed: number;
-  successful: number;
-  failed: number;
-  factor_version: string;
-}
 
 interface DataSummary {
   total_raw_records: number;
@@ -89,7 +79,6 @@ export default function DataTraceability() {
   // Data states
   const [rawData, setRawData] = useState<RawDataEntry[]>([]);
   const [calculatedData, setCalculatedData] = useState<CalculatedDataEntry[]>([]);
-  const [calculationRuns, setCalculationRuns] = useState<CalculationRun[]>([]);
   const [dataSummary, setDataSummary] = useState<DataSummary>({
     total_raw_records: 0,
     total_calculated: 0,
@@ -137,7 +126,6 @@ export default function DataTraceability() {
       await Promise.all([
         fetchRawData(),
         fetchCalculatedData(),
-        fetchCalculationRuns(),
         fetchDataSummary()
       ]);
     } catch (error) {
@@ -151,36 +139,97 @@ export default function DataTraceability() {
   const fetchRawData = async () => {
     if (!company) return;
 
+    // Fetch entries with calculations from unified table to determine correct match status
     const { data, error } = await supabase
       .from('emission_entries')
-      .select('*')
+      .select(`
+        *,
+        emission_calc(
+          id,
+          calculation_method,
+          total_emissions,
+          calculated_at
+        )
+      `)
       .eq('company_id', company.id)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
-    const formattedData: RawDataEntry[] = data.map(item => ({
-      id: item.id,
-      date: item.date,
-      category: item.category,
-      description: item.description,
-      quantity: item.quantity,
-      unit: item.unit,
-      scope: item.scope,
-      match_status: item.match_status || 'unmatched',
-      created_at: item.created_at,
-      notes: item.notes
-    }));
+    const formattedData: RawDataEntry[] = data.map(item => {
+      // Determine correct match status based on unified emission_calc table
+      const hasCalculation = item.emission_calc && item.emission_calc.length > 0;
+      const correctMatchStatus = hasCalculation ? 'matched' : 'unmatched';
+      
+      return {
+        id: item.id,
+        date: item.date,
+        category: getStandardCategoryName(item.category),
+        description: item.description,
+        quantity: item.quantity,
+        unit: item.unit,
+        scope: item.scope,
+        match_status: correctMatchStatus, // Use calculated status instead of stored status
+        created_at: item.created_at,
+        notes: item.notes
+      };
+    });
 
     setRawData(formattedData);
+    console.log('✅ Raw data fetched with correct match status:', {
+      total: formattedData.length,
+      matched: formattedData.filter(d => d.match_status === 'matched').length,
+      unmatched: formattedData.filter(d => d.match_status === 'unmatched').length
+    });
   };
 
   const fetchCalculatedData = async () => {
     if (!company) return;
 
     try {
-      const calculations = await unifiedCalculationService.fetchAllCalculations(company.id);
-      setCalculatedData(calculations);
+      const response = await unifiedCalculationService.fetchAllCalculations(company.id);
+      if (response.success) {
+        // Map the response data to include all necessary fields with better source information
+        const mappedData = response.data.map(calc => {
+          // Use the new source extraction utility
+          const properSource = extractCalculationSource(calc);
+          const { factor: emissionFactor, unit: emissionFactorUnit } = extractEmissionFactorInfo(calc);
+          const metadata = extractCalculationMetadata(calc);
+
+          return {
+            id: calc.id,
+            entry_id: calc.entry_id,
+            category: getStandardCategoryName(calc.category || calc.emission_entries?.category || 'Unknown'),
+            description: calc.emission_entries?.description || 'No description',
+            quantity: calc.emission_entries?.quantity || 0,
+            unit: calc.emission_entries?.unit || '',
+            scope: calc.scope || calc.emission_entries?.scope || 1,
+            total_emissions: calc.total_emissions || 0,
+            emissions_unit: 'kg CO₂e', // Standardize unit
+            emission_factor: emissionFactor,
+            emission_factor_unit: emissionFactorUnit,
+            confidence: metadata.confidence,
+            source: properSource, // Use the extracted source
+            calculated_at: calc.calculated_at,
+            calculation_method: calc.calculation_method, // This will be 'RAG' or 'OPENAI'
+            similarity_score: metadata.similarity_score || calc.similarity_score,
+            processing_time_ms: metadata.processing_time_ms || calc.processing_time_ms,
+            raw_input: metadata.raw_input || calc.raw_input,
+            matched_factor_id: metadata.matched_factor_id || calc.matched_factor_id
+          };
+        });
+        
+        setCalculatedData(mappedData);
+        console.log('✅ Calculated data fetched and mapped with proper sources:', {
+          total: mappedData.length,
+          rag: mappedData.filter(d => d.calculation_method === 'RAG').length,
+          openai: mappedData.filter(d => d.calculation_method === 'OPENAI').length,
+          sources: [...new Set(mappedData.map(d => d.source))]
+        });
+      } else {
+        console.error('Error fetching calculated data:', response.error);
+        setCalculatedData([]);
+      }
     } catch (error) {
       console.error('Error fetching calculated data:', error);
       // Fallback to empty array
@@ -188,67 +237,52 @@ export default function DataTraceability() {
     }
   };
 
-  const fetchCalculationRuns = async () => {
-    // Mock calculation runs for now - in a real app, this would come from a calculation_runs table
-    const mockRuns: CalculationRun[] = [
-      {
-        id: '1',
-        timestamp: new Date().toISOString(),
-        user: 'System',
-        method: 'Hybrid RAG + Assistant',
-        entries_processed: 25,
-        successful: 23,
-        failed: 2,
-        factor_version: 'v2024.1'
-      },
-      {
-        id: '2',
-        timestamp: new Date(Date.now() - 86400000).toISOString(),
-        user: 'Admin',
-        method: 'RAG Only',
-        entries_processed: 15,
-        successful: 15,
-        failed: 0,
-        factor_version: 'v2024.1'
-      }
-    ];
-    setCalculationRuns(mockRuns);
-  };
-
   const fetchDataSummary = async () => {
     if (!company) return;
 
     try {
-    // Get raw data count
-    const { count: rawCount } = await supabase
-      .from('emission_entries')
-      .select('*', { count: 'exact', head: true })
-      .eq('company_id', company.id);
+      // Get raw data count
+      const { count: rawCount } = await supabase
+        .from('emission_entries')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', company.id);
 
-    // Get pending calculation count
-    const { count: pendingCount } = await supabase
-      .from('emission_entries')
-      .select('*', { count: 'exact', head: true })
-      .eq('company_id', company.id)
-      .eq('match_status', 'unmatched');
+      // Get entries that actually have calculations in the unified table
+      const { data: entriesWithCalcs } = await supabase
+        .from('emission_entries')
+        .select(`
+          id,
+          emission_calc!inner(id)
+        `)
+        .eq('company_id', company.id);
+
+      // Calculate pending based on actual calculations vs total entries
+      const totalRaw = rawCount || 0;
+      const calculatedCount = entriesWithCalcs?.length || 0;
+      const pendingCount = totalRaw - calculatedCount;
 
       // Get unified calculation summary
       const calculationSummary = await unifiedCalculationService.getCalculationSummary(company.id);
 
-    const totalRaw = rawCount || 0;
-    const pending = pendingCount || 0;
-      const coverage = totalRaw > 0 ? (calculationSummary.total_calculations / totalRaw) * 100 : 0;
+      const coverage = totalRaw > 0 ? (calculatedCount / totalRaw) * 100 : 0;
 
-    setDataSummary({
-      total_raw_records: totalRaw,
+      setDataSummary({
+        total_raw_records: totalRaw,
         total_calculated: calculationSummary.total_calculations,
-        last_calculation_run: calculationSummary.last_calculation ? new Date(calculationSummary.last_calculation).toLocaleDateString() : '',
-      active_factor_version: 'v2024.1',
-      pending_calculation: pending,
+        last_calculation_run: calculationSummary.last_calculation ? new Date(calculationSummary.last_calculation).toLocaleDateString() : 'Never',
+        active_factor_version: 'v2024.1',
+        pending_calculation: pendingCount,
         calculation_coverage: coverage,
         rag_calculations: calculationSummary.rag_calculations,
         assistant_calculations: calculationSummary.assistant_calculations
-    });
+      });
+
+      console.log('📊 Data Summary Updated:', {
+        totalRaw,
+        calculatedCount,
+        pendingCount,
+        coverage: coverage.toFixed(1) + '%'
+      });
     } catch (error) {
       console.error('Error fetching data summary:', error);
     }
@@ -271,63 +305,98 @@ export default function DataTraceability() {
       if (!recalculateAll) {
         // Only process unmatched entries
         entriesToProcess = entriesToProcess.filter(entry => entry.match_status === 'unmatched');
-        }
+      }
         
       if (entriesToProcess.length === 0) {
         toast.info("No entries found for calculation");
         return;
       }
 
-        setCalculationProgress({ current: 0, total: entriesToProcess.length });
+      setCalculationProgress({ current: 0, total: entriesToProcess.length });
         
-      console.log(`🚀 Starting hybrid calculation for ${entriesToProcess.length} entries (prefer RAG: ${preferRag})`);
+      console.log(`🚀 Starting unified calculation for ${entriesToProcess.length} entries`);
 
-      // Prepare inputs for hybrid calculation
-      const inputs = entriesToProcess.map(entry => ({
-        raw_input: `${entry.description} ${entry.quantity} ${entry.unit}`,
-        entry_id: entry.id
+      // Convert raw entries to EmissionEntry format
+      const entries = entriesToProcess.map(entry => ({
+        id: entry.id,
+        company_id: company.id,
+        date: entry.date,
+        category: entry.category,
+        description: entry.description,
+        quantity: entry.quantity,
+        unit: entry.unit,
+        scope: entry.scope,
+        match_status: entry.match_status,
+        notes: entry.notes
       }));
 
-      // Use hybrid calculation service
-      const result = await hybridEmissionCalculator.batchCalculateEmissions(
-        inputs,
-        company.id,
-        preferRag
+      // Use unified calculation service with progress callback
+      const result = await unifiedCalculationService.calculateBatchEntries(
+        entries,
+        (completed, total) => {
+          setCalculationProgress({ current: completed, total });
+          if (completed < total && entries[completed]) {
+            setCurrentProcessingEntry(entries[completed].description);
+          }
+        }
       );
 
       setCalculationProgress({ current: entriesToProcess.length, total: entriesToProcess.length });
 
-      if (result.summary.total_entries === 0) {
+      if (result.total_entries === 0) {
         toast.info("No entries found for calculation");
       } else {
-        const ragSuccessful = result.summary.rag_successful;
-        const assistantSuccessful = result.summary.assistant_successful;
-        const failed = result.summary.failed;
+        const ragSuccessful = result.rag_calculations;
+        const openaiSuccessful = result.openai_calculations;
+        const failed = result.failed_calculations;
 
         toast.success(
-          `✨ Calculated emissions for ${ragSuccessful + assistantSuccessful} of ${result.summary.total_entries} entries`
+          `✨ Calculated emissions for ${result.successful_calculations} of ${result.total_entries} entries`
         );
 
         if (ragSuccessful > 0) {
           toast.success(`🤖 RAG: ${ragSuccessful} calculations`);
         }
-        if (assistantSuccessful > 0) {
-          toast.success(`🧠 Assistant: ${assistantSuccessful} calculations`);
+        if (openaiSuccessful > 0) {
+          toast.success(`🧠 OpenAI: ${openaiSuccessful} calculations`);
         }
         if (failed > 0) {
           toast.warning(`❌ Failed: ${failed} entries`);
         }
 
-        console.log(`📊 Hybrid Calculation Summary:`, result.summary);
+        console.log(`📊 Unified Calculation Summary:`, result);
         
         if (result.errors && result.errors.length > 0) {
           console.warn(`⚠️ Calculation errors:`, result.errors);
         }
       }
 
-      // Refresh data
-      await fetchAllData();
+      // After batch completes, refresh all data to show updated match status
+      await Promise.all([
+        fetchRawData(),
+        fetchCalculatedData(),
+        fetchDataSummary()
+      ]);
+      
+      setCurrentProcessingEntry('');
       setSelectedEntries([]);
+      
+      // Show results
+      if (result.successful_calculations > 0) {
+        toast.success(
+          `✅ Successfully calculated ${result.successful_calculations} out of ${result.total_entries} entries!\n` +
+          `• RAG calculations: ${result.rag_calculations}\n` +
+          `• OpenAI calculations: ${result.openai_calculations}\n` +
+          `• Processing time: ${(result.processing_time_ms / 1000).toFixed(1)}s`
+        );
+      } else {
+        toast.error(`❌ No calculations were successful. Check the errors for details.`);
+      }
+      
+      if (result.errors.length > 0) {
+        console.error('Calculation errors:', result.errors);
+        toast.warning(`⚠️ ${result.errors.length} entries failed calculation. Check console for details.`);
+      }
 
     } catch (error) {
       console.error("Error running calculations:", error);
@@ -344,8 +413,7 @@ export default function DataTraceability() {
     if (!company) return;
 
     try {
-      const testInput = "I need to know the factor for fuel usage EURO 95, 100 liters in the Netherlands based on DEFRA";
-      const result = await hybridEmissionCalculator.testRagSystem(testInput, company.id);
+      const result = await unifiedCalculationService.testCalculation(company.id);
       
       if (result.success) {
         toast.success(`🎉 ${result.message}`);
@@ -365,9 +433,9 @@ export default function DataTraceability() {
     }
 
     try {
-      // First delete any calculations for this entry
+      // First delete any calculations for this entry from the unified table
       const { error: calcError } = await supabase
-        .from('emission_calc_openai')
+        .from('emission_calc')
         .delete()
         .eq('entry_id', entryId);
 
@@ -912,6 +980,7 @@ export default function DataTraceability() {
                         <th className="text-left p-2">Category</th>
                         <th className="text-left p-2">Description</th>
                         <th className="text-left p-2">Quantity</th>
+                        <th className="text-left p-2">Scope</th>
                         <th className="text-left p-2">Emissions</th>
                         <th className="text-left p-2">Factor</th>
                         <th className="text-left p-2">Method</th>
@@ -922,10 +991,13 @@ export default function DataTraceability() {
                     <tbody>
                       {sortedCalculatedData.map((entry) => (
                         <tr key={entry.id} className="border-b hover:bg-gray-50">
-                          <td className="p-2">{new Date(entry.calculated_at).toLocaleDateString()}</td>
+                          <td className="p-2">{new Date(entry.emission_entries?.date || entry.calculated_at).toLocaleDateString()}</td>
                           <td className="p-2">{entry.category}</td>
                           <td className="p-2">{entry.description}</td>
                           <td className="p-2">{entry.quantity} {entry.unit}</td>
+                          <td className="p-2">
+                            <Badge variant="outline">Scope {entry.scope}</Badge>
+                          </td>
                           <td className="p-2 font-medium">
                             {entry.total_emissions.toFixed(2)} {entry.emissions_unit}
                           </td>
@@ -939,32 +1011,32 @@ export default function DataTraceability() {
                           </td>
                           <td className="p-2">
                             <Badge 
-                              variant={entry.calculation_method === 'RAG' ? 'default' : entry.calculation_method === 'ASSISTANT' ? 'secondary' : 'outline'}
-                              className={entry.calculation_method === 'RAG' ? 'bg-blue-100 text-blue-800' : entry.calculation_method === 'ASSISTANT' ? 'bg-green-100 text-green-800' : ''}
+                              variant={entry.calculation_method === 'RAG' ? 'default' : entry.calculation_method === 'OPENAI' ? 'secondary' : 'outline'}
+                              className={entry.calculation_method === 'RAG' ? 'bg-blue-100 text-blue-800' : entry.calculation_method === 'OPENAI' ? 'bg-green-100 text-green-800' : ''}
                             >
                               {entry.calculation_method === 'RAG' ? (
                                 <><Bot className="h-3 w-3 mr-1" />RAG</>
-                              ) : entry.calculation_method === 'ASSISTANT' ? (
-                                <><Brain className="h-3 w-3 mr-1" />Assistant</>
+                              ) : entry.calculation_method === 'OPENAI' ? (
+                                <><Brain className="h-3 w-3 mr-1" />OpenAI</>
                               ) : (
-                                <><Zap className="h-3 w-3 mr-1" />Climatiq</>
+                                <><Zap className="h-3 w-3 mr-1" />Other</>
                               )}
                             </Badge>
                           </td>
                           <td className="p-2">
-                            {entry.calculation_method === 'RAG' && (
+                            {entry.calculation_method === 'RAG' && entry.confidence && (
                               <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
                                 {(entry.confidence * 100).toFixed(1)}%
                               </Badge>
                             )}
-                            {entry.calculation_method === 'ASSISTANT' && (
+                            {entry.calculation_method === 'OPENAI' && (
                               <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
                                 {(entry.confidence * 100).toFixed(0)}%
                               </Badge>
                             )}
-                            {entry.calculation_method === 'CLIMATIQ' && (
+                            {!entry.confidence && (
                               <Badge variant="outline" className="text-xs bg-gray-50 text-gray-700">
-                                100%
+                                N/A
                               </Badge>
                             )}
                           </td>
@@ -978,43 +1050,6 @@ export default function DataTraceability() {
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        {/* Calculation Audit Log */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <History className="h-5 w-5" />
-              <span>Calculation Audit Log</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {calculationRuns.map((run) => (
-                <div key={run.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <Calculator className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <div>
-                      <div className="font-medium">{run.method}</div>
-                      <div className="text-sm text-gray-500">
-                        {new Date(run.timestamp).toLocaleString()} • {run.user}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-medium">
-                      {run.successful}/{run.entries_processed} successful
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      Factor version: {run.factor_version}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
           </CardContent>
         </Card>
       </div>

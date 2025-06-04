@@ -2,28 +2,30 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
-import { Database } from '@/integrations/supabase/types';
 
-// Get the base type for an emission entry from generated types
-type EmissionEntryBase = Database['public']['Tables']['emission_entries']['Row'];
-
-// Manually define the expected structure for the calculation part
-// Based on the columns used in the working SQL query (get_dashboard_data)
+// Define the unified calculation structure from emission_calc table
 interface EmissionCalculation {
-  id: number;
-  total_emissions: number | null;
-  emissions_unit: string | null;
+  id: string;
+  entry_id: string;
+  calculation_method: string;
+  total_emissions: number;
+  scope: number;
+  category: string | null;
+  region: string | null;
+  source: string | null;
+  confidence: number | null;
   calculated_at: string;
-  factor_name?: string | null;
-  source?: string | null;
-  year_used?: number | null;
-  category?: string | null;
-  region?: string | null;
-  activity_id?: string | null;
+  co2_emissions: number | null;
+  ch4_emissions: number | null;
+  n2o_emissions: number | null;
+  emissions_factor_id: string | null;
+  emission_factor_id: string | null;
+  year_used: number | null;
+  activity_data: any;
+  request_params: any;
 }
 
-// Combine the base entry type with the expected calculation structure
-// Supabase joins typically return the joined table as an array (even for one-to-one)
+// Define the emission entry with unified calculation structure
 export interface EmissionEntryWithCalculation {
   id: string;
   category: string;
@@ -35,7 +37,7 @@ export interface EmissionEntryWithCalculation {
   created_at: string;
   match_status?: string | null;
   notes?: string | null;
-  emission_calc_openai: EmissionCalculation[] | null; // Updated table name
+  emission_calc: EmissionCalculation[] | null; // Updated to use unified table
 }
 
 export const useScopeEntries = (scope: 1 | 2 | 3) => {
@@ -58,11 +60,12 @@ export const useScopeEntries = (scope: 1 | 2 | 3) => {
     setError(null);
 
     try {
+      // Fetch entries with unified calculations from emission_calc table
       const { data, error: fetchError } = await supabase
         .from('emission_entries')
         .select(`
           *,
-          emission_calc_openai(*)
+          emission_calc(*)
         `)
         .eq('company_id', company.id)
         .eq('scope', scope)

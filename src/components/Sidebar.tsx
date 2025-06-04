@@ -4,7 +4,6 @@ import { useCompany } from "@/contexts/CompanyContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Logo } from "@/components/branding/Logo";
 import { 
   LayoutDashboard, 
   BarChart2, 
@@ -20,9 +19,6 @@ import {
   Upload,
   Database
 } from "lucide-react";
-
-// Memoize the Logo component to prevent unnecessary re-renders
-const MemoizedLogo = memo(Logo);
 
 // Memoize NavLink component
 const NavLink = memo(({ to, icon, label, isExpanded, isActive }: {
@@ -87,19 +83,7 @@ export const Sidebar = () => {
       )}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-    >
-      {/* Logo - Made smaller */}
-      <div className="p-2 flex items-center justify-center">
-        <Link to="/dashboard">
-          <MemoizedLogo 
-            variant="light" 
-            withText={false} 
-            className="w-8 h-8 transition-all duration-300" 
-            isLink={false} 
-          />
-        </Link>
-      </div>
-      
+    >      
       {/* Navigation - More compact spacing */}
       <nav className="flex-1 px-1 py-2 space-y-0.5 overflow-y-auto">
         <NavLink to="/dashboard" icon={<LayoutDashboard size={16} />} label="Dashboard" isExpanded={isExpanded} isActive={isPathActive('/dashboard')} />

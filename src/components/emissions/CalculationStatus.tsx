@@ -44,7 +44,7 @@ export const CalculationStatus = () => {
     try {
       // Get latest calculation based on emission_calculations
       const { data: latestCalc, error: calcError } = await supabase
-        .from('emission_calc_openai')
+        .from('emission_calc')
         .select('calculated_at')
         .eq('company_id', company.id)
         .order('calculated_at', { ascending: false })

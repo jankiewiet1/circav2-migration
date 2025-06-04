@@ -1,7 +1,5 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import dashboardImage from '@/assets/dashboard.png';
 
 export function CircaInAction() {
   return (
@@ -25,9 +23,9 @@ export function CircaInAction() {
             <CardContent>
               <div className="rounded-md overflow-hidden shadow-md">
                 <img 
-                  src={dashboardImage}
+                  src="/dashboard.png"
                   alt="Circa Dashboard" 
-                  className="w-full h-auto object-cover"
+                  className="w-full h-auto"
                 />
               </div>
             </CardContent>

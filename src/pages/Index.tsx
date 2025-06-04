@@ -110,10 +110,10 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Sticky Header/Nav - Always visible */}
-      <header className="fixed w-full bg-white/95 backdrop-blur-sm shadow-sm z-50 py-4 px-2 md:px-6">
+      <header className="fixed w-full bg-white/95 backdrop-blur-sm shadow-sm z-50 py-2 px-2 md:px-6">
         <div className="max-w-[1400px] w-full mx-auto flex justify-between items-center px-4">
           <div className="flex items-center">
-            <Logo className="h-10 w-auto" />
+            <Logo className="h-20 w-auto" />
           </div>
           
           <div className="hidden md:flex items-center space-x-6 text-base">
@@ -171,42 +171,20 @@ const Index = () => {
                 </a>
               </Button>
             </div>
-            
-            <p className="text-sm text-gray-500 mb-4">{t('hero.noCreditCard')}</p>
-            
-            <div className="flex items-center space-x-6 mt-8">
-              <div className="flex items-center">
-                <div className="flex -space-x-2">
-                  <img src="https://randomuser.me/api/portraits/women/44.jpg" alt={t('alt.userPhoto', 'User')} className="w-8 h-8 rounded-full border-2 border-white" />
-                  <img src="https://randomuser.me/api/portraits/men/46.jpg" alt={t('alt.userPhoto', 'User')} className="w-8 h-8 rounded-full border-2 border-white" />
-                  <img src="https://randomuser.me/api/portraits/women/22.jpg" alt={t('alt.userPhoto', 'User')} className="w-8 h-8 rounded-full border-2 border-white" />
-                </div>
-                <span className="ml-2 text-sm text-gray-600">{t('hero.trustedBy', 'Trusted by 500+ companies')}</span>
-              </div>
-              <div className="h-6 border-l border-gray-300"></div>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center">
-                  <span className="text-yellow-500">★★★★★</span>
-                  <span className="ml-1 text-sm font-medium">4.8</span>
-                </div>
-                <span className="text-xs text-gray-600">{t('hero.ratingSource', 'Capterra')}</span>
-              </div>
-            </div>
           </div>
           
           <div className="relative">
             <div className="absolute -z-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] rounded-full bg-green-50"></div>
-            <div className="relative bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="relative bg-white rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto">
               <div className="w-full bg-gray-100 h-6 flex items-center px-2 space-x-1">
                 <div className="w-3 h-3 rounded-full bg-red-400"></div>
                 <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
                 <div className="w-3 h-3 rounded-full bg-green-400"></div>
               </div>
               <img 
-                src="/dashboard.jpg" 
+                src="/dashboard.png" 
                 alt={t('alt.dashboardImage', 'Circa Dashboard')}
-                className="w-full object-cover"
-                style={{ height: '380px' }}
+                className="w-full h-auto"
               />
             </div>
             
@@ -371,7 +349,7 @@ const Index = () => {
       <footer className="bg-white py-12 border-t border-gray-200">
         <div className="max-w-[1400px] w-full mx-auto px-4">
           <div className="flex flex-col items-center justify-center">
-            <Logo className="h-8 w-auto mb-4" />
+            <Logo className="h-20 w-20 mb-4" />
             <p className="text-gray-600 text-center mb-4">{t('footer.tagline')}</p>
           </div>
           <div className="mt-12 pt-8 border-t border-gray-200">

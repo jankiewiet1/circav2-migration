@@ -77,7 +77,7 @@ const handler = async (req: Request) => {
 // Create HTML email template for signup confirmation
 function generateHtmlEmail(data) {
   const { name, company, calendlyUrl = "https://calendly.com/circa-info/30min" } = data;
-  const logoUrl = "https://circa.site/lovable-uploads/7416a2f2-be9a-4bce-9909-6e9663491308.png";
+  const logoUrl = "https://circa.site/circa-logo.png";
   const brandColor = "#10b981";
 
   return `

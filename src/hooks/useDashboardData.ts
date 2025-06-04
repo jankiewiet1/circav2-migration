@@ -1,52 +1,28 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, subMonths, startOfMonth, subQuarters, startOfQuarter, startOfYear, parseISO } from 'date-fns';
+import { mapToGHGCategory, ALL_GHG_CATEGORIES } from '@/utils/ghgProtocolCategories';
+import { unifiedCalculationService } from '@/services/unifiedCalculationService';
 
 // Types for dashboard data
 export interface DashboardData {
   kpis: {
-    monthly: {
-      total: number;
-      scope1: number;
-      scope2: number;
-      scope3: number;
-      percentChange: number;
-    };
-    quarterly: {
-      total: number;
-      scope1: number;
-      scope2: number;
-      scope3: number;
-      percentChange: number;
-    };
-    ytd: {
-      total: number;
-      scope1: number;
-      scope2: number;
-      scope3: number;
-      percentChange: number;
-    };
+    monthly: { total: number; scope1: number; scope2: number; scope3: number; percentChange?: number };
+    quarterly: { total: number; scope1: number; scope2: number; scope3: number; percentChange?: number };
+    ytd: { total: number; scope1: number; scope2: number; scope3: number; percentChange?: number };
   };
   timeSeries: {
-    monthly: Array<{
-      month: string;
-      scope1: number;
-      scope2: number;
-      scope3: number;
-      total: number;
-    }>;
+    monthly: { 
+      month: string; 
+      "Scope 1": number; 
+      "Scope 2": number; 
+      "Scope 3": number; 
+      total: number; 
+    }[];
   };
   breakdowns: {
-    byCategory: Array<{
-      category: string;
-      value: number;
-      percentage: number;
-    }>;
-    byScope: Array<{
-      scope: string;
-      value: number;
-      percentage: number;
-    }>;
+    byCategory: { category: string; emissions: number; percentage: number }[];
+    byScope: { name: string; value: number; percentage: number }[];
   };
   targets: {
     currentTarget: number;
@@ -83,6 +59,7 @@ export function useDashboardData(companyId: string | undefined, filters: Dashboa
 
   useEffect(() => {
     if (!companyId) {
+      console.log('📊 Dashboard: No company ID provided');
       setLoading(false);
       return;
     }
@@ -92,50 +69,43 @@ export function useDashboardData(companyId: string | undefined, filters: Dashboa
       setError(null);
 
       try {
-        // Get emission entries with calculations
-        const { data: entriesData, error } = await supabase
-          .from('emission_entries')
-          .select(`
-            id,
-            category,
-            quantity,
-            unit,
-            scope,
-            date,
-            created_at,
-            emission_calc_openai(
-              id,
-              total_emissions,
-              emissions_unit,
-              calculated_at,
-              factor_name,
-              source,
-              activity_id,
-              region,
-              category,
-              year_used
-            )
-          `)
-          .eq('company_id', companyId)
-          .order('date', { ascending: false });
-          
-        if (error) throw error;
+        console.log('📊 Dashboard: Fetching unified calculations for company:', companyId);
         
-        console.log("Fetched emission entries:", entriesData?.length || 0, "records");
+        // Get all calculations using the unified service (RAG + Assistant)
+        const response = await unifiedCalculationService.fetchAllCalculations(companyId);
         
-        if (!entriesData || entriesData.length === 0) {
-          // No data found
+        if (!response.success) {
+          throw new Error(response.error || 'Failed to fetch calculations');
+        }
+
+        const calculations = response.data;
+        
+        console.log('📊 Dashboard: Unified calculations received:', {
+          total: calculations.length,
+          rag: calculations.filter(c => c.calculation_method === 'RAG').length,
+          openai: calculations.filter(c => c.calculation_method === 'OPENAI').length
+        });
+        
+        if (calculations.length === 0) {
+          console.log('📊 Dashboard: No calculations found, returning empty data');
           setData(createEmptyDashboardData());
           setLoading(false);
           return;
         }
         
-        // Process the entries data
-        const processedData = processEntriesData(entriesData, filters);
+        // Process the calculations data
+        console.log('📊 Dashboard: Processing unified calculations...');
+        const processedData = processUnifiedCalculationsData(calculations, filters);
+        console.log('📊 Dashboard: Processed data:', {
+          kpis: processedData.kpis,
+          timeSeriesLength: processedData.timeSeries.monthly.length,
+          categoriesLength: processedData.breakdowns.byCategory.length,
+          scopesLength: processedData.breakdowns.byScope.length
+        });
         setData(processedData);
         
       } catch (err: any) {
-        console.error("Error fetching dashboard data:", err);
+        console.error("📊 Dashboard: Error fetching dashboard data:", err);
         setError(err.message || "Failed to load dashboard data");
       } finally {
         setLoading(false);
@@ -160,9 +130,9 @@ function createEmptyDashboardData(): DashboardData {
     breakdowns: {
       byCategory: [],
       byScope: [
-        { scope: 'Scope 1', value: 0, percentage: 0 },
-        { scope: 'Scope 2', value: 0, percentage: 0 },
-        { scope: 'Scope 3', value: 0, percentage: 0 }
+        { name: 'Scope 1', value: 0, percentage: 0 },
+        { name: 'Scope 2', value: 0, percentage: 0 },
+        { name: 'Scope 3', value: 0, percentage: 0 }
       ]
     },
     targets: {
@@ -178,45 +148,58 @@ function createEmptyDashboardData(): DashboardData {
   };
 }
 
-// Process entries data with accurate scope information
-function processEntriesData(entriesData: any[], filters: DashboardFilters): DashboardData {
+// Process unified calculations data (RAG + Assistant)
+function processUnifiedCalculationsData(calculations: any[], filters: DashboardFilters): DashboardData {
+  console.log('📊 Processing unified calculations data, input:', calculations?.length, 'calculations');
+  console.log('📊 Calculation methods breakdown:', {
+    RAG: calculations.filter(c => c.calculation_method === 'RAG').length,
+    OPENAI: calculations.filter(c => c.calculation_method === 'OPENAI').length
+  });
+  
   // Current date info
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = format(now, 'yyyy-MM');
   
-  // Simplify and extract data
-  const processedEntries = entriesData.map(entry => {
-    // Get the total emissions from the calculation
-    const totalEmissions = entry.emission_calc_openai && 
-                           entry.emission_calc_openai.length > 0 ? 
-                           entry.emission_calc_openai[0].total_emissions || 0 : 0;
-                           
-    // Get the date from entry, not calculation
-    const entryDate = new Date(entry.date);
+  // Convert calculations to entries format for processing
+  const processedEntries = calculations.map(calc => {
+    const entryDate = new Date(calc.calculated_at);
     const month = format(entryDate, 'yyyy-MM');
     const year = entryDate.getFullYear();
     
-    // Use the actual scope from entry
-    const scope = entry.scope;
+    console.log('📊 Processing calculation:', {
+      id: calc.id,
+      category: calc.category,
+      totalEmissions: calc.total_emissions,
+      scope: calc.scope,
+      method: calc.calculation_method,
+      month
+    });
     
     return {
-      id: entry.id,
-      date: entry.date,
+      id: calc.entry_id,
+      date: calc.calculated_at,
       entryDate: entryDate,
       month,
       year,
-      category: entry.category || 'General',
-      emissions: totalEmissions,
-      scope,
+      category: calc.category || 'General',
+      description: calc.description || '',
+      emissions: calc.total_emissions || 0,
+      scope: calc.scope,
+      calculationMethod: calc.calculation_method,
       // Map emission to correct scope field
-      scope1: scope === 1 ? totalEmissions : 0,
-      scope2: scope === 2 ? totalEmissions : 0,
-      scope3: scope === 3 ? totalEmissions : 0
+      scope1: calc.scope === 1 ? calc.total_emissions : 0,
+      scope2: calc.scope === 2 ? calc.total_emissions : 0,
+      scope3: calc.scope === 3 ? calc.total_emissions : 0
     };
   });
   
-  // Get latest entry
+  console.log('📊 Processed calculations:', processedEntries.length, 
+    'total emissions:', processedEntries.reduce((sum, entry) => sum + entry.emissions, 0),
+    'RAG calculations:', processedEntries.filter(e => e.calculationMethod === 'RAG').length,
+    'OPENAI calculations:', processedEntries.filter(e => e.calculationMethod === 'OPENAI').length);
+  
+  // Get latest calculation
   const latestEntry = processedEntries.length > 0 ? {
     date: processedEntries[0].date,
     scope: processedEntries[0].scope
@@ -259,9 +242,9 @@ function processEntriesData(entriesData: any[], filters: DashboardFilters): Dash
     .sort()
     .map(month => ({
       month,
-      scope1: monthlyData[month].scope1,
-      scope2: monthlyData[month].scope2,
-      scope3: monthlyData[month].scope3,
+      "Scope 1": monthlyData[month].scope1,
+      "Scope 2": monthlyData[month].scope2,
+      "Scope 3": monthlyData[month].scope3,
       total: monthlyData[month].total
     }));
   
@@ -351,25 +334,31 @@ function processEntriesData(entriesData: any[], filters: DashboardFilters): Dash
     ytdPercentChange = -100;
   }
 
-  // Calculate category breakdown
-  const categoryMap: Record<string, number> = {};
+  // Calculate category breakdown using GHG Protocol categories
+  const ghgCategoryMap: Record<string, number> = {};
   processedEntries.forEach(entry => {
-    const category = entry.category;
-    if (!categoryMap[category]) {
-      categoryMap[category] = 0;
+    const originalCategory = entry.category;
+    const ghgCategory = mapToGHGCategory(originalCategory, entry.description || '');
+    
+    // Use the mapped GHG category name, or fall back to original category
+    const categoryName = ghgCategory ? ghgCategory.name : originalCategory;
+    
+    if (!ghgCategoryMap[categoryName]) {
+      ghgCategoryMap[categoryName] = 0;
     }
-    categoryMap[category] += entry.emissions;
+    ghgCategoryMap[categoryName] += entry.emissions;
   });
   
   const totalEmissions = processedEntries.reduce((sum, entry) => sum + entry.emissions, 0);
   
-  const categoryBreakdown = Object.keys(categoryMap)
+  const categoryBreakdown = Object.keys(ghgCategoryMap)
     .map(category => ({
       category,
-      value: categoryMap[category],
-      percentage: totalEmissions > 0 ? (categoryMap[category] / totalEmissions) * 100 : 0
+      emissions: ghgCategoryMap[category],
+      percentage: totalEmissions > 0 ? (ghgCategoryMap[category] / totalEmissions) * 100 : 0
     }))
-    .sort((a, b) => b.value - a.value);
+    .sort((a, b) => b.emissions - a.emissions)
+    .slice(0, 10); // Show top 10 categories
     
   // Calculate scope breakdown with actual data
   const scope1Total = processedEntries.reduce((sum, entry) => sum + entry.scope1, 0);
@@ -378,17 +367,17 @@ function processEntriesData(entriesData: any[], filters: DashboardFilters): Dash
   
   const scopeBreakdown = [
     { 
-      scope: 'Scope 1', 
+      name: 'Scope 1',
       value: scope1Total,
       percentage: totalEmissions > 0 ? (scope1Total / totalEmissions) * 100 : 0
     },
     { 
-      scope: 'Scope 2', 
+      name: 'Scope 2',
       value: scope2Total,
       percentage: totalEmissions > 0 ? (scope2Total / totalEmissions) * 100 : 0
     },
     { 
-      scope: 'Scope 3', 
+      name: 'Scope 3',
       value: scope3Total,
       percentage: totalEmissions > 0 ? (scope3Total / totalEmissions) * 100 : 0
     }

@@ -10,12 +10,30 @@ interface LogoProps {
 export const Logo = ({ variant = "dark", withText = true, className = "", isLink = true }: LogoProps) => {
   const textColor = variant === "light" ? "text-white" : "text-gray-900";
   
-  // Use the original logo file
-  const logoSrc = "/lovable-uploads/7416a2f2-be9a-4bce-9909-6e9663491308.png";
+  // Use the actual user's PNG logo file
+  const logoSrc = "/circa-logo.png";
+  
+  // Check if height/width classes are provided in className
+  const hasHeightClass = className.includes('h-');
+  const hasWidthClass = className.includes('w-');
+  
+  // Extract size classes from className for the image container
+  const sizeClasses = className.split(' ').filter(cls => 
+    cls.startsWith('h-') || cls.startsWith('w-') || cls.startsWith('max-h-') || cls.startsWith('max-w-')
+  ).join(' ');
+  
+  // Remove size classes from outer className to avoid conflicts
+  const outerClasses = className.split(' ').filter(cls => 
+    !cls.startsWith('h-') && !cls.startsWith('w-') && !cls.startsWith('max-h-') && !cls.startsWith('max-w-')
+  ).join(' ');
+  
+  // Use default height if no height class provided
+  const defaultHeight = hasHeightClass ? '' : 'h-16';
+  const imageContainerClasses = sizeClasses || (withText ? `w-auto ${defaultHeight}` : 'w-full h-full');
   
   const logoContent = (
-    <div className={`flex items-center ${className}`}>
-      <div className={withText ? 'w-auto h-14 mr-3' : 'w-full h-full'}>
+    <div className={`flex items-center ${outerClasses}`}>
+      <div className={`${imageContainerClasses} ${withText ? 'mr-3' : ''}`}>
         <img 
           src={logoSrc}
           alt="Circa Logo" 

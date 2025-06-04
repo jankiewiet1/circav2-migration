@@ -8,7 +8,7 @@ export function ProductShowcase() {
     {
       title: t('productShowcase.dashboard.title'),
       description: t('productShowcase.dashboard.description'),
-      image: "/dashboard.jpg",
+      image: "/dashboard.png",
       icon: Layout,
       color: "bg-blue-500"
     },
@@ -47,11 +47,11 @@ export function ProductShowcase() {
                   circa.site
                 </div>
               </div>
-              <div className="relative overflow-hidden" style={{ height: "240px" }}>
+              <div className="relative overflow-hidden">
                 <img
                   src={card.image}
                   alt={card.title}
-                  className="w-full object-cover object-top transform group-hover:scale-105 transition-transform duration-700"
+                  className="w-full h-auto transform group-hover:scale-105 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent group-hover:opacity-0 transition-opacity"></div>
               </div>

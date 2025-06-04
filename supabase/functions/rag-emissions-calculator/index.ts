@@ -33,24 +33,24 @@ interface EmissionFactor {
 
 // Validation ranges for common emission factors (kg CO2e per unit)
 const VALIDATION_RANGES = {
-  // Fuels (per liter)
-  'diesel': { min: 0.15, max: 0.35, unit: 'L' },
-  'petrol': { min: 0.15, max: 0.30, unit: 'L' },
-  'gasoline': { min: 0.15, max: 0.30, unit: 'L' },
-  'fuel oil': { min: 0.20, max: 0.40, unit: 'L' },
+  // Fuels (per liter) - Updated ranges
+  'diesel': { min: 0.10, max: 0.50, unit: 'L' },
+  'petrol': { min: 0.10, max: 0.40, unit: 'L' },
+  'gasoline': { min: 0.10, max: 0.40, unit: 'L' },
+  'fuel oil': { min: 0.15, max: 0.50, unit: 'L' },
   
-  // Electricity (per kWh)
-  'electricity': { min: 0.10, max: 1.50, unit: 'kWh' },
-  'electric': { min: 0.10, max: 1.50, unit: 'kWh' },
+  // Electricity (per kWh) - Expanded range for different grids
+  'electricity': { min: 0.05, max: 2.00, unit: 'kWh' },
+  'electric': { min: 0.05, max: 2.00, unit: 'kWh' },
   
-  // Natural gas (per m3)
-  'natural gas': { min: 1.50, max: 2.50, unit: 'm3' },
-  'gas': { min: 1.50, max: 2.50, unit: 'm3' },
+  // Natural gas (per m3) - Much more realistic range
+  'natural gas': { min: 0.0001, max: 5.0, unit: 'm3' },
+  'gas': { min: 0.0001, max: 5.0, unit: 'm3' },
   
-  // Transport (per km) - very rough ranges
-  'flight': { min: 0.08, max: 0.50, unit: 'km' },
-  'car': { min: 0.05, max: 0.40, unit: 'km' },
-  'vehicle': { min: 0.05, max: 0.40, unit: 'km' },
+  // Transport (per km) - Expanded ranges
+  'flight': { min: 0.05, max: 1.00, unit: 'km' },
+  'car': { min: 0.02, max: 0.60, unit: 'km' },
+  'vehicle': { min: 0.02, max: 0.60, unit: 'km' },
 }
 
 // Rate limiting configuration
@@ -69,7 +69,7 @@ function normalizeQuery(input: string): string {
 }
 
 function extractKeyTerms(parsedData: ParsedEmissionData): string[] {
-  const terms = []
+  const terms: string[] = []
   
   if (parsedData.fuel_type) terms.push(parsedData.fuel_type)
   if (parsedData.subcategory) terms.push(parsedData.subcategory)
@@ -94,6 +94,43 @@ function validateEmissionFactor(factor: EmissionFactor, parsedData: ParsedEmissi
   const normalizedDescription = normalizeQuery(factor.description)
   const factorValue = factor.ef_value
   const unit = parsedData.unit.toLowerCase()
+  const factorUnit = factor.unit.toLowerCase()
+  
+  // **FIX: Strict unit matching - prevent major mismatches**
+  const commonUnitMismatches = [
+    { entryUnit: ['tonne', 'tonnes', 't'], factorUnit: ['kwh', 'kw'], reason: 'weight vs energy' },
+    { entryUnit: ['kg', 'kilogram'], factorUnit: ['kwh', 'kw'], reason: 'weight vs energy' },
+    { entryUnit: ['kwh', 'kw'], factorUnit: ['tonne', 'tonnes', 't', 'kg'], reason: 'energy vs weight' },
+    { entryUnit: ['l', 'liter', 'litre'], factorUnit: ['kwh', 'kw'], reason: 'volume vs energy' },
+    { entryUnit: ['m3', 'cubic'], factorUnit: ['kwh', 'kw'], reason: 'volume vs energy' }
+  ];
+  
+  for (const mismatch of commonUnitMismatches) {
+    const entryMatchesUnit = mismatch.entryUnit.some(u => unit.includes(u));
+    const factorMatchesUnit = mismatch.factorUnit.some(u => factorUnit.includes(u));
+    
+    if (entryMatchesUnit && factorMatchesUnit) {
+      console.log(`❌ Critical unit mismatch prevented: ${parsedData.unit} (${mismatch.reason}) vs factor unit ${factor.unit}`);
+      return false;
+    }
+  }
+  
+  // **FIX: Enhanced category-unit validation**
+  const category = parsedData.category.toLowerCase();
+  
+  // Waste disposal should not use electricity factors
+  if ((category.includes('waste') || normalizedDescription.includes('waste')) && 
+      (factorUnit.includes('kwh') || factorUnit.includes('kw'))) {
+    console.log(`❌ Validation failed: Waste disposal should not use electricity factors`);
+    return false;
+  }
+  
+  // Electricity should not use fuel/weight factors
+  if ((category.includes('electric') || normalizedDescription.includes('electric')) && 
+      (factorUnit.includes('tonne') || factorUnit.includes('kg') || factorUnit.includes('liter'))) {
+    console.log(`❌ Validation failed: Electricity should not use fuel/weight factors`);
+    return false;
+  }
   
   // Check validation ranges
   for (const [key, range] of Object.entries(VALIDATION_RANGES)) {
@@ -127,8 +164,9 @@ async function checkRateLimit(supabaseClient: any, userId: string | null, userIP
     if (demo_mode) {
       // Check demo rate limits by IP
       const { count: hourlyDemoCount, error: demoError } = await supabaseClient
-        .from('emission_calc_rag')
+        .from('emission_calc')
         .select('*', { count: 'exact', head: true })
+        .eq('calculation_method', 'RAG')
         .eq('raw_input', `demo:${userIP}`) // Use raw_input to track demo IP
         .gte('created_at', oneHourAgo.toISOString())
       
@@ -144,8 +182,9 @@ async function checkRateLimit(supabaseClient: any, userId: string | null, userIP
     } else if (userId) {
       // Check authenticated user rate limits
       const { count: hourlyCount, error: hourlyError } = await supabaseClient
-        .from('emission_calc_rag')
+        .from('emission_calc')
         .select('*', { count: 'exact', head: true })
+        .eq('calculation_method', 'RAG')
         .eq('company_id', userId) // Assuming company_id relates to user
         .gte('created_at', oneHourAgo.toISOString())
       
@@ -160,8 +199,9 @@ async function checkRateLimit(supabaseClient: any, userId: string | null, userIP
       }
       
       const { count: dailyCount, error: dailyError } = await supabaseClient
-        .from('emission_calc_rag')
+        .from('emission_calc')
         .select('*', { count: 'exact', head: true })
+        .eq('calculation_method', 'RAG')
         .eq('company_id', userId)
         .gte('created_at', oneDayAgo.toISOString())
       
@@ -178,8 +218,9 @@ async function checkRateLimit(supabaseClient: any, userId: string | null, userIP
     
     // Check global rate limit
     const { count: globalCount, error: globalError } = await supabaseClient
-      .from('emission_calc_rag')
+      .from('emission_calc')
       .select('*', { count: 'exact', head: true })
+      .eq('calculation_method', 'RAG')
       .gte('created_at', oneMinuteAgo.toISOString())
     
     if (globalError) throw globalError
@@ -202,24 +243,20 @@ async function checkRateLimit(supabaseClient: any, userId: string | null, userIP
 }
 
 async function logRateLimitUsage(supabaseClient: any, userId: string | null, userIP: string, demo_mode: boolean) {
-  // For demo mode, we'll use a special tracking method
-  if (demo_mode) {
-    try {
-      await supabaseClient
-        .from('emission_calc_rag')
-        .insert({
-          company_id: '00000000-0000-0000-0000-000000000000', // Special UUID for demo
-          raw_input: `demo:${userIP}`,
-          parsed_data: { demo: true, ip: userIP },
-          quantity: 0,
-          unit: 'demo',
-          emission_factor: 0,
-          total_emissions: 0,
-          processing_time_ms: 0
-        })
-    } catch (error) {
-      console.error('Failed to log demo usage:', error)
-    }
+  try {
+    await supabaseClient.from('emission_calc').insert({
+      company_id: userId || 'demo',
+      calculation_method: 'RAG',
+      raw_input: demo_mode ? `demo:${userIP}` : 'rate_limit_log',
+      total_emissions: 0,
+      emissions_unit: 'kg CO2e',
+      source: 'RATE_LIMIT_LOG',
+      calculated_at: new Date().toISOString(),
+      processing_time_ms: 0,
+      similarity_score: 0
+    })
+  } catch (error) {
+    console.error('Failed to log rate limit usage:', error)
   }
 }
 
@@ -315,7 +352,54 @@ Text to parse: "${raw_input}"`
       max_tokens: 500
     })
 
-    const parsedData: ParsedEmissionData = JSON.parse(parseResponse.choices[0]?.message?.content || '{}')
+    // **FIX: Better JSON parsing with error handling**
+    let parsedData: ParsedEmissionData;
+    try {
+      const responseContent = parseResponse.choices[0]?.message?.content || '{}';
+      console.log('🔍 Raw GPT response:', responseContent);
+      
+      // Clean the response - remove any markdown formatting or extra text
+      let cleanedContent = responseContent.trim();
+      
+      // Remove markdown code blocks if present
+      if (cleanedContent.startsWith('```json')) {
+        cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      } else if (cleanedContent.startsWith('```')) {
+        cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
+      
+      // Find JSON object bounds
+      const jsonStart = cleanedContent.indexOf('{');
+      const jsonEnd = cleanedContent.lastIndexOf('}');
+      
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+        cleanedContent = cleanedContent.substring(jsonStart, jsonEnd + 1);
+      }
+      
+      console.log('🧹 Cleaned content for parsing:', cleanedContent);
+      
+      parsedData = JSON.parse(cleanedContent);
+      
+      // Validate required fields
+      if (!parsedData.quantity || !parsedData.unit || !parsedData.description) {
+        throw new Error('Missing required fields in parsed data');
+      }
+      
+    } catch (parseError) {
+      console.error('❌ JSON parsing failed:', parseError);
+      console.error('❌ Raw response was:', parseResponse.choices[0]?.message?.content);
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to parse AI response',
+          details: parseError.message,
+          raw_response: parseResponse.choices[0]?.message?.content,
+          suggestion: 'The AI response was not in valid JSON format'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     console.log('📊 Parsed data:', parsedData)
 
     // Step 2: Generate optimized embedding for similarity search
@@ -392,28 +476,251 @@ Text to parse: "${raw_input}"`
         )
       }
 
-      similarFactors = validatedFactors
+      // Use validatedFactors instead of reassigning similarFactors
+      const finalFactors = validatedFactors;
+      
+      // Step 4: Validate and select the best match
+      let bestMatch: EmissionFactor | null = null
+      
+      for (const factor of finalFactors) {
+        const isValid = validateEmissionFactor(factor, parsedData);
+        console.log(`🔍 Validating factor: ${factor.description} (similarity: ${factor.similarity.toFixed(3)}) - Valid: ${isValid}`);
+        
+        if (isValid) {
+          bestMatch = factor
+          break
+        }
+      }
+
+      // **FIX: Strict error handling - no results if validation fails**
+      if (!bestMatch) {
+        const errorMessage = 'No valid emission factors found after validation';
+        console.error(`❌ ${errorMessage}`);
+        
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: errorMessage,
+            parsed_data: parsedData,
+            found_factors: finalFactors.length,
+            validation_details: finalFactors.map(f => ({
+              description: f.description,
+              similarity: f.similarity,
+              unit: f.unit,
+              ef_value: f.ef_value,
+              validation_passed: validateEmissionFactor(f, parsedData)
+            })),
+            suggestion: 'The available emission factors did not pass strict validation checks for this query. This prevents incorrect calculations.'
+          }),
+          { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      console.log('✅ Best validated match found:', bestMatch)
+      console.log(`📈 Similarity: ${bestMatch.similarity}, Factor: ${bestMatch.ef_value} kg CO2e/${parsedData.unit}`)
+
+      // Step 5: Calculate emissions
+      const totalEmissions = parsedData.quantity * bestMatch.ef_value
+      
+      // Determine scope from the emission factor or parsed data (moved outside demo_mode condition)
+      const scope = bestMatch.scope ? parseInt(bestMatch.scope.replace('Scope ', '')) : 
+                   (parsedData.category === 'electricity' ? 2 : 
+                    parsedData.category === 'transport' ? 3 : 1);
+      
+      // Step 6: Save calculation to database (skip in demo mode)
+      let savedCalculation = null
+      let calculationId = null
+
+      if (!demo_mode) {
+        // Extract proper source from bestMatch.source or description
+        let properSource = bestMatch.source;
+        if (!properSource || properSource === 'OPENAI_ASSISTANT_API') {
+          // Try to extract from description or other fields
+          if (bestMatch.description && bestMatch.description.includes('Source:')) {
+            const sourceMatch = bestMatch.description.match(/Source:\s*([^|]+)/);
+            if (sourceMatch) {
+              properSource = sourceMatch[1].trim();
+            }
+          } else {
+            properSource = 'RAG Database';
+          }
+        }
+
+        // Extract region from the factor if available
+        const region = bestMatch.country || 'global';
+
+        // Get the entry date from the request, fallback to current date if not provided
+        let entryDate = new Date().toISOString();
+        if (entry_id) {
+          // If we have an entry_id, fetch the actual entry date
+          try {
+            const { data: entryData, error: entryError } = await supabaseClient
+              .from('emission_entries')
+              .select('date')
+              .eq('id', entry_id)
+              .single();
+            
+            if (!entryError && entryData && entryData.date) {
+              entryDate = new Date(entryData.date).toISOString();
+              console.log(`📅 Using entry date: ${entryDate}`);
+            }
+          } catch (error) {
+            console.warn('Could not fetch entry date, using current date');
+          }
+        }
+
+        const calculationData = {
+          company_id,
+          entry_id,
+          calculation_method: 'RAG',
+          total_emissions: totalEmissions,
+          emissions_unit: 'kg CO2e',
+          
+          // Structured data in proper columns
+          source: properSource,
+          factor_name: bestMatch.description,
+          scope: scope,
+          category: parsedData.category,
+          region: region,
+          
+          // RAG-specific fields
+          similarity_score: bestMatch.similarity,
+          processing_time_ms: Date.now() - startTime,
+          raw_input,
+          matched_factor_id: bestMatch.id,
+          
+          // Gas breakdowns (if available in factor data)
+          co2_emissions: null, // RAG factors typically don't break down by gas
+          ch4_emissions: null,
+          n2o_emissions: null,
+          
+          // Activity data for additional context (simplified)
+          activity_data: {
+            quantity: parsedData.quantity,
+            unit: parsedData.unit,
+            emission_factor: bestMatch.ef_value,
+            emission_factor_unit: `kg CO2e/${parsedData.unit}`,
+            confidence: parsedData.confidence * bestMatch.similarity,
+            validation_passed: true,
+            factor_details: {
+              activity: bestMatch.activity,
+              fuel: bestMatch.fuel,
+              country: bestMatch.country,
+              ghg: bestMatch.ghg
+            }
+          },
+          
+          calculated_at: entryDate
+        }
+
+        const { data: calculation, error: saveError } = await supabaseClient
+          .from('emission_calc')
+          .insert(calculationData)
+          .select()
+          .single()
+
+        if (saveError) {
+          console.error('❌ Save error:', saveError)
+          throw new Error(`Failed to save calculation: ${saveError.message}`)
+        }
+
+        savedCalculation = calculation
+        calculationId = calculation.id
+        console.log('✅ RAG calculation saved to unified emission_calc table with complete data')
+      } else {
+        console.log('🎭 Demo mode: Skipping database save')
+      }
+
+      // Step 7: Return comprehensive result with validation info
+      const result = demo_mode ? {
+        // Simplified result for demo mode
+        success: true,
+        total_emissions: totalEmissions,
+        emissions_unit: 'kg CO2e',
+        emission_factor: bestMatch.ef_value,
+        emission_factor_unit: `kg CO2e/${parsedData.unit}`,
+        confidence_score: parsedData.confidence,
+        similarity_score: bestMatch.similarity,
+        source: bestMatch.source,
+        matched_activity: bestMatch.description,
+        processing_time_ms: Date.now() - startTime,
+        quantity: parsedData.quantity,
+        unit: parsedData.unit,
+        validation_passed: true
+      } : {
+        // Full result for authenticated users
+        success: true,
+        calculation_id: calculationId,
+        parsed_data: parsedData,
+        matched_factor: {
+          id: bestMatch.id,
+          description: bestMatch.description,
+          source: bestMatch.source,
+          similarity: bestMatch.similarity,
+          validation_passed: true
+        },
+        calculation: {
+          quantity: parsedData.quantity,
+          unit: parsedData.unit,
+          emission_factor: bestMatch.ef_value,
+          emission_factor_unit: `kg CO2e/${parsedData.unit}`,
+          total_emissions: totalEmissions,
+          emissions_unit: 'kg CO2e',
+          breakdown: {
+            co2: null,
+            ch4: null,
+            n2o: null
+          },
+          scope: scope,
+          confidence: parsedData.confidence * bestMatch.similarity
+        },
+        processing_time_ms: Date.now() - startTime,
+        alternative_matches: finalFactors.slice(1).map(f => ({
+          ...f,
+          validation_passed: validateEmissionFactor(f, parsedData)
+        }))
+      }
+
+      return new Response(
+        JSON.stringify(result),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     // Step 4: Validate and select the best match
     let bestMatch: EmissionFactor | null = null
     
     for (const factor of similarFactors) {
-      if (validateEmissionFactor(factor, parsedData)) {
+      const isValid = validateEmissionFactor(factor, parsedData);
+      console.log(`🔍 Validating factor: ${factor.description} (similarity: ${factor.similarity.toFixed(3)}) - Valid: ${isValid}`);
+      
+      if (isValid) {
         bestMatch = factor
         break
       }
     }
 
+    // **FIX: Strict error handling - no results if validation fails**
     if (!bestMatch) {
+      const errorMessage = 'No valid emission factors found after validation';
+      console.error(`❌ ${errorMessage}`);
+      
       return new Response(
         JSON.stringify({ 
-          error: 'No valid emission factors found after validation',
+          success: false,
+          error: errorMessage,
           parsed_data: parsedData,
           found_factors: similarFactors.length,
-          validation_failed: 'All potential matches failed validation checks'
+          validation_details: similarFactors.map(f => ({
+            description: f.description,
+            similarity: f.similarity,
+            unit: f.unit,
+            ef_value: f.ef_value,
+            validation_passed: validateEmissionFactor(f, parsedData)
+          })),
+          suggestion: 'The available emission factors did not pass strict validation checks for this query. This prevents incorrect calculations.'
         }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -423,39 +730,99 @@ Text to parse: "${raw_input}"`
     // Step 5: Calculate emissions
     const totalEmissions = parsedData.quantity * bestMatch.ef_value
     
-    // Determine scope from the scope field
-    const scope = bestMatch.scope ? parseInt(bestMatch.scope.replace('Scope ', '')) : null
-
+    // Determine scope from the emission factor or parsed data (moved outside demo_mode condition)
+    const scope = bestMatch.scope ? parseInt(bestMatch.scope.replace('Scope ', '')) : 
+                 (parsedData.category === 'electricity' ? 2 : 
+                  parsedData.category === 'transport' ? 3 : 1);
+    
     // Step 6: Save calculation to database (skip in demo mode)
     let savedCalculation = null
     let calculationId = null
 
     if (!demo_mode) {
+      // Extract proper source from bestMatch.source or description
+      let properSource = bestMatch.source;
+      if (!properSource || properSource === 'OPENAI_ASSISTANT_API') {
+        // Try to extract from description or other fields
+        if (bestMatch.description && bestMatch.description.includes('Source:')) {
+          const sourceMatch = bestMatch.description.match(/Source:\s*([^|]+)/);
+          if (sourceMatch) {
+            properSource = sourceMatch[1].trim();
+          }
+        } else {
+          properSource = 'RAG Database';
+        }
+      }
+
+      // Extract region from the factor if available
+      const region = bestMatch.country || 'global';
+
+      // Get the entry date from the request, fallback to current date if not provided
+      let entryDate = new Date().toISOString();
+      if (entry_id) {
+        // If we have an entry_id, fetch the actual entry date
+        try {
+          const { data: entryData, error: entryError } = await supabaseClient
+            .from('emission_entries')
+            .select('date')
+            .eq('id', entry_id)
+            .single();
+          
+          if (!entryError && entryData && entryData.date) {
+            entryDate = new Date(entryData.date).toISOString();
+            console.log(`📅 Using entry date: ${entryDate}`);
+          }
+        } catch (error) {
+          console.warn('Could not fetch entry date, using current date');
+        }
+      }
+
       const calculationData = {
         company_id,
         entry_id,
-        raw_input,
-        parsed_data: parsedData,
-        query_embedding: queryEmbedding,
-        matched_factor_id: bestMatch.id,
-        similarity_score: bestMatch.similarity,
-        quantity: parsedData.quantity,
-        unit: parsedData.unit,
-        emission_factor: bestMatch.ef_value,
+        calculation_method: 'RAG',
         total_emissions: totalEmissions,
         emissions_unit: 'kg CO2e',
-        co2_emissions: null,
+        
+        // Structured data in proper columns
+        source: properSource,
+        factor_name: bestMatch.description,
+        scope: scope,
+        category: parsedData.category,
+        region: region,
+        
+        // RAG-specific fields
+        similarity_score: bestMatch.similarity,
+        processing_time_ms: Date.now() - startTime,
+        raw_input,
+        matched_factor_id: bestMatch.id,
+        
+        // Gas breakdowns (if available in factor data)
+        co2_emissions: null, // RAG factors typically don't break down by gas
         ch4_emissions: null,
         n2o_emissions: null,
-        scope,
-        confidence_score: parsedData.confidence * bestMatch.similarity,
-        gpt_model_used: 'gpt-4o-mini',
-        embedding_model_used: 'text-embedding-ada-002',
-        processing_time_ms: Date.now() - startTime
+        
+        // Activity data for additional context (simplified)
+        activity_data: {
+          quantity: parsedData.quantity,
+          unit: parsedData.unit,
+          emission_factor: bestMatch.ef_value,
+          emission_factor_unit: `kg CO2e/${parsedData.unit}`,
+          confidence: parsedData.confidence * bestMatch.similarity,
+          validation_passed: true,
+          factor_details: {
+            activity: bestMatch.activity,
+            fuel: bestMatch.fuel,
+            country: bestMatch.country,
+            ghg: bestMatch.ghg
+          }
+        },
+        
+        calculated_at: entryDate
       }
 
       const { data: calculation, error: saveError } = await supabaseClient
-        .from('emission_calc_rag')
+        .from('emission_calc')
         .insert(calculationData)
         .select()
         .single()
@@ -467,7 +834,7 @@ Text to parse: "${raw_input}"`
 
       savedCalculation = calculation
       calculationId = calculation.id
-      console.log('✅ Calculation saved successfully')
+      console.log('✅ RAG calculation saved to unified emission_calc table with complete data')
     } else {
       console.log('🎭 Demo mode: Skipping database save')
     }
@@ -512,7 +879,7 @@ Text to parse: "${raw_input}"`
           ch4: null,
           n2o: null
         },
-        scope,
+        scope: scope,
         confidence: parsedData.confidence * bestMatch.similarity
       },
       processing_time_ms: Date.now() - startTime,

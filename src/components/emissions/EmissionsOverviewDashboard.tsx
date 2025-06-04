@@ -18,8 +18,8 @@ interface EmissionsOverviewDashboardProps {
 }
 
 const getCalculatedEmissions = (entry: EmissionEntryWithCalculation): number => {
-  if (entry.emission_calc_openai && entry.emission_calc_openai.length > 0) {
-    return entry.emission_calc_openai[0]?.total_emissions ?? 0;
+  if (entry.emission_calc && entry.emission_calc.length > 0) {
+    return entry.emission_calc[0]?.total_emissions ?? 0;
   }
   return 0;
 };

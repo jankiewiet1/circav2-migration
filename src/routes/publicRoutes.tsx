@@ -11,16 +11,19 @@ import { useEffect } from "react";
 // Set document title and favicon
 document.title = "Circa - Carbon Management Platform";
 
-// Create a link element for the favicon
+// Create a link element for the favicon with new design
 const setFavicon = () => {
   const link = document.createElement('link');
   link.type = 'image/svg+xml';
   link.rel = 'shortcut icon';
-  link.href = "data:image/svg+xml,%3Csvg width='36' height='36' viewBox='0 0 36 36' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='18' cy='18' r='18' fill='%230E5D40'/%3E%3Cpath d='M14 12C14 12 18 12 22 12C26 12 28 14 28 18C28 22 26 24 22 24H14' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M18 15L15 18L18 21' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
+  link.href = "data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%234ade80;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%2316a34a;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='16' fill='url(%23grad)'/%3E%3Cpath d='M 16 4 A 12 12 0 1 1 16 28' stroke='white' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3Cpath d='M 16 8 A 8 8 0 1 1 16 24' stroke='white' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E";
   document.head.appendChild(link);
 };
 
-// Component for setting effect
+// Call it immediately
+setFavicon();
+
+// Component to set up route-specific effects
 const RouteEffects = () => {
   useEffect(() => {
     setFavicon();

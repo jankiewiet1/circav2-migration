@@ -399,9 +399,9 @@ export default function ChatGPTStyleCalculator() {
         {messages.filter(m => m.type === 'user').length === 0 && (
           <div className="flex-1 flex items-center justify-center px-4 pt-8">
             <div className="w-full max-w-4xl text-center">
-              {/* Massive Centered Logo */}
-              <div className="flex items-center justify-center mb-6">
-                <Logo className="w-20 h-20 md:w-24 md:h-24 lg:w-32 lg:h-32" withText={false} isLink={false} />
+              {/* Centered Logo */}
+              <div className="flex items-center justify-center mb-2 mt-6 ml-8">
+                <Logo className="w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64" withText={false} isLink={false} />
               </div>
               
               {/* Title and Tagline */}

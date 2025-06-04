@@ -234,7 +234,7 @@ const handler = async (req: Request) => {
       
       // Build HTML email
       function generateSummaryHtml({ company, summary, reduction }) {
-        const logoUrl = "https://circa.site/lovable-uploads/7416a2f2-be9a-4bce-9909-6e9663491308.png";
+        const logoUrl = "https://circa.site/circa-logo.png";
         const brandColor = "#10b981";
         const calendlyUrl = "https://calendly.com/circa-info/30min";
         

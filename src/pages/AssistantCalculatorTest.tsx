@@ -131,7 +131,7 @@ export default function AssistantCalculatorTest() {
                 <li>Sends each entry to OpenAI Assistant with context</li>
                 <li>Assistant uses knowledge base to find emission factors</li>
                 <li>Calculates total emissions with source references</li>
-                <li>Saves results to emission_calc_openai table</li>
+                <li>Saves results to emission_calc table (unified)</li>
                 <li>Updates entry status to 'matched'</li>
               </ol>
             </div>

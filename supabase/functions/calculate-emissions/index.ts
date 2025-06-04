@@ -100,23 +100,25 @@ Activity Details:
 
 Requirements:
 1. Use standardized emission factors (prefer DEFRA, EPA, or IEA 2024 data)
-2. For electricity, use a consistent grid average factor (around 0.233 kg CO2e/kWh for global average)
-3. Specify the exact source and year of the emission factor
-4. Be consistent - same categories should use the same factors
+2. For electricity: use regional grid factors (e.g., "UK Grid Average 0.233 kg CO2e/kWh - DEFRA 2024")
+3. For fuels: use combustion factors (e.g., "Diesel Combustion 2.68 kg CO2e/L - DEFRA 2024")
+4. For heating: match units properly (GJ should use GJ factors, kWh should use kWh factors)
+5. Specify the EXACT source name and year of the emission factor
+6. Ensure units match (GJ × kg CO2e/GJ, kWh × kg CO2e/kWh, L × kg CO2e/L)
 
 Return the result in this exact JSON format:
 {
   "emission_factor": 0.233,
   "emission_factor_unit": "kg CO2e/kWh",
-  "total_emissions": 2330.0,
+  "total_emissions": 233.0,
   "emissions_unit": "kg CO2e",
   "scope": 2,
-  "source": "IEA Global Grid Average 2024",
+  "source": "DEFRA 2024 UK Grid Average",
   "confidence": 0.95,
-  "calculation_details": "10000 kWh × 0.233 kg CO2e/kWh = 2330.0 kg CO2e",
+  "calculation_details": "1000 kWh × 0.233 kg CO2e/kWh = 233.0 kg CO2e",
   "warnings": [],
-  "emission_breakdown": {"co2": 2330.0, "ch4": 0, "n2o": 0},
-  "factor_metadata": {"factor_id": "IEA_2024_GRID", "year": 2024, "region": "Global", "category": "Electricity"}
+  "emission_breakdown": {"co2": 233.0, "ch4": 0, "n2o": 0},
+  "factor_metadata": {"factor_id": "DEFRA_2024_UK_GRID", "year": 2024, "region": "UK", "category": "Electricity", "source_document": "DEFRA 2024 Conversion Factors"}
 }`
             }, {
               headers: {
@@ -215,24 +217,65 @@ Return the result in this exact JSON format:
             const confidence = assistantResponse.confidence || 0.95;
             const source = assistantResponse.source || 'OpenAI Assistant';
 
-            // Save calculation to database
-            const { error } = await supabase.from('emission_calc_openai').insert({
+            // **FIX: Unit validation to prevent mismatches**
+            const entryUnit = entry.unit.toLowerCase();
+            const responseUnit = (assistantResponse.emission_factor_unit || '').toLowerCase();
+            
+            // Check if units are compatible
+            const isValidUnitMatch = responseUnit.includes(entryUnit) || 
+                                   entryUnit.includes(responseUnit.split('/')[1]?.replace('kg co2e/', ''));
+            
+            if (!isValidUnitMatch && emissionFactor > 0) {
+              console.warn(`⚠️ Unit mismatch detected: entry unit "${entry.unit}" vs factor unit "${assistantResponse.emission_factor_unit}"`);
+              // Could potentially throw an error or request recalculation with correct units
+            }
+
+            // **FIX: Validate emission factor ranges to catch obvious errors**
+            const isReasonableEmissionFactor = emissionFactor >= 0 && emissionFactor <= 100;
+            if (!isReasonableEmissionFactor) {
+              console.warn(`⚠️ Unreasonable emission factor: ${emissionFactor} for unit ${entry.unit}`);
+            }
+
+            // **FIX: Use entry date instead of calculation date**
+            const entryDate = entry.date ? new Date(entry.date).toISOString() : new Date().toISOString();
+
+            // Save calculation to unified database
+            const { error } = await supabase.from('emission_calc').insert({
               company_id: entry.company_id,
               entry_id: entry.id,
-              calculated_at: new Date().toISOString(),
+              calculation_method: 'OPENAI',
+              calculated_at: entryDate, // **FIX: Use entry date, not current date**
               total_emissions: emissions,
               emissions_unit: assistantResponse.emissions_unit || 'kg CO2e',
-              scope: scope.toString(),
               source: 'OPENAI_ASSISTANT_API',
-              activity_id: 'assistant_calculated',
+              
+              // Core fields for compatibility
+              scope: scope,
+              category: entry.category,
+              region: assistantResponse.factor_metadata?.region || 'global',
               emissions_factor_id: `asst_${Date.now()}_${entry.id.slice(-8)}`,
               factor_name: `AI Assistant - ${assistantResponse.source || 'Unknown'}`,
-              region: assistantResponse.factor_metadata?.region || 'Global',
-              category: `Scope ${scope}`,
+              activity_id: 'assistant_calculated',
               year_used: assistantResponse.factor_metadata?.year || new Date().getFullYear(),
+              
+              // Gas breakdowns
               co2_emissions: assistantResponse.emission_breakdown?.co2 || emissions,
               ch4_emissions: assistantResponse.emission_breakdown?.ch4 || 0,
               n2o_emissions: assistantResponse.emission_breakdown?.n2o || 0,
+              
+              // Request parameters for debugging
+              request_params: {
+                entry_data: {
+                  category: entry.category,
+                  description: entry.description,
+                  quantity: entry.quantity,
+                  unit: entry.unit
+                },
+                assistant_id: assistantId,
+                model: 'gpt-4-1106-preview'
+              },
+              
+              // Activity data for additional context
               activity_data: {
                 category: entry.category,
                 quantity: entry.quantity,
@@ -244,11 +287,7 @@ Return the result in this exact JSON format:
                 calculation_method: 'assistant',
                 calculation_details: assistantResponse.calculation_details || '',
                 warnings: assistantResponse.warnings || [],
-                assistant_response: assistantResponse
-              },
-              request_params: {
-                assistant_id: assistantId,
-                model: 'gpt-4-1106-preview',
+                assistant_response: assistantResponse,
                 calculated_by: 'assistant_api',
                 timestamp: new Date().toISOString()
               }

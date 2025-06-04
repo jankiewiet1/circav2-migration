@@ -1,0 +1,25 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="greenGradientSmall" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#22d3ee;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#047857;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main circular background with gradient -->
+  <circle cx="32" cy="32" r="32" fill="url(#greenGradientSmall)"/>
+  
+  <!-- Outer C shape -->
+  <path d="M 32 5 A 27 27 0 1 1 32 59" 
+        stroke="white" 
+        stroke-width="10" 
+        fill="none" 
+        stroke-linecap="round"/>
+  
+  <!-- Inner C shape -->
+  <path d="M 32 16 A 16 16 0 1 1 32 48" 
+        stroke="white" 
+        stroke-width="6" 
+        fill="none" 
+        stroke-linecap="round"/>
+</svg> 

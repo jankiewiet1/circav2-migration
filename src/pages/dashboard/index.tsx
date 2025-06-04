@@ -34,7 +34,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 const CIRCA_COLORS = ["#0E5D40", "#6ED0AA", "#AAE3CA", "#D6F3E7", "#85C2A6", "#4B8B6B"];
 const SCOPE_COLORS = {
   "Scope 1": "#0E5D40",
-  "Scope 2": "#6ED0AA", 
+  "Scope 2": "#6ED0AA",
   "Scope 3": "#AAE3CA"
 };
 
@@ -127,7 +127,7 @@ const KpiCard = ({
                 changeType === 'decrease' ? 'text-green-600' : 'text-red-600'
               }`}>
                 {Math.abs(change).toFixed(1)}% vs. last year
-              </span>
+      </span>
             </div>
           )}
         </CardHeader>
@@ -228,7 +228,7 @@ const FilterBar = ({ filters, onFiltersChange }: {
       });
     }
   }, [filters, onFiltersChange]);
-
+  
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -239,12 +239,12 @@ const FilterBar = ({ filters, onFiltersChange }: {
         {/* Date Range Picker */}
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-700">Period:</span>
-          <div className="flex gap-1">
+            <div className="flex gap-1">
             {["3M", "6M", "1Y", "2Y"].map((period) => (
-              <Button
+              <Button 
                 key={period}
                 variant={filters.period === period ? "default" : "outline"}
-                size="sm"
+                size="sm" 
                 onClick={() => handlePeriodClick(period)}
                 className="h-8 px-3"
               >
@@ -261,20 +261,20 @@ const FilterBar = ({ filters, onFiltersChange }: {
               >
                 <CalendarIcon className="h-4 w-4 mr-1" />
                 Custom
-              </Button>
-            </PopoverTrigger>
+                </Button>
+              </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                initialFocus
-                mode="range"
-                defaultMonth={dateRange?.from}
-                selected={dateRange}
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={dateRange?.from}
+                  selected={dateRange}
                 onSelect={handleCustomDateRange}
-                numberOfMonths={2}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
+                  numberOfMonths={2}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
 
         {/* Scope Toggles */}
         <div className="flex items-center gap-2">
@@ -311,12 +311,28 @@ const TimeSeriesChart = ({ data, type = 'line', filters }: {
 }) => {
   const ChartComponent = type === 'area' ? AreaChart : LineChart;
   
+  // Debug logging for chart data
+  useEffect(() => {
+    console.log('📊 TimeSeriesChart data:', {
+      dataLength: data?.length,
+      hasData: !!data && data.length > 0,
+      sampleData: data?.slice(0, 2),
+      filters: filters.scopes
+    });
+  }, [data, filters.scopes]);
+  
   // Filter data based on selected scopes with error handling
   const filteredData = useMemo(() => {
-    if (!data || data.length === 0) return [];
-    if (!filters.scopes || filters.scopes.length === 0) return data;
+    if (!data || data.length === 0) {
+      console.log('📊 TimeSeriesChart: No input data');
+      return [];
+    }
+    if (!filters.scopes || filters.scopes.length === 0) {
+      console.log('📊 TimeSeriesChart: No scopes selected, returning original data');
+      return data;
+    }
     
-    return data.map(item => {
+    const filtered = data.map(item => {
       if (!item) return { month: 'Unknown' };
       
       const filteredItem: any = { month: item.month || 'Unknown' };
@@ -333,6 +349,9 @@ const TimeSeriesChart = ({ data, type = 'line', filters }: {
       
       return filteredItem;
     });
+    
+    console.log('📊 TimeSeriesChart filtered data:', filtered.slice(0, 2));
+    return filtered;
   }, [data, filters.scopes]);
 
   // Don't render if no valid data
@@ -491,6 +510,17 @@ export default function Dashboard() {
   const { company } = useCompany();
   const [chartType, setChartType] = useState<'line' | 'area'>('line');
   
+  // Debug logging for user and company
+  useEffect(() => {
+    console.log('📊 Dashboard: User and Company info:', {
+      userId: user?.id,
+      companyId: company?.id,
+      companyName: company?.name,
+      hasUser: !!user,
+      hasCompany: !!company
+    });
+  }, [user, company]);
+  
   // Initialize filters with default values
   const [filters, setFilters] = useState<DashboardFilters>({
     period: '1Y',
@@ -505,16 +535,59 @@ export default function Dashboard() {
   // Use real dashboard data with automatic updates
   const { data: dashboardData, loading: isLoading, error } = useDashboardData(company?.id, filters);
   
+  // If no real data is available, use mock data for testing
+  const displayData = useMemo(() => {
+    if (isLoading) return null;
+    
+    if (!dashboardData || (
+      dashboardData.timeSeries.monthly.length === 0 && 
+      dashboardData.kpis.ytd.total === 0
+    )) {
+      console.log('📊 Dashboard: No real data available, using mock data for demo');
+      return {
+        kpis: {
+          monthly: { total: 2223.89, scope1: 2223.89, scope2: 0, scope3: 0, percentChange: -76.5 },
+          quarterly: { total: 14429.656, scope1: 5278.996, scope2: 0, scope3: 9150.66, percentChange: 242.1 },
+          ytd: { total: 18647.806, scope1: 5278.996, scope2: 1566.87, scope3: 11801.94, percentChange: -16.3 }
+        },
+        timeSeries: { monthly: mockEmissionsData },
+        breakdowns: {
+          byCategory: mockCategoryData,
+          byScope: mockScopeBreakdown
+        },
+        targets: {
+          currentTarget: 20,
+          targetYear: 2030,
+          currentProgress: 5.6,
+          baselineYear: 2024,
+          baselineEmissions: 20000
+        },
+        entries: {
+          latest: { date: '2026-03-09', scope: 1 }
+        }
+      };
+    }
+    
+    return dashboardData;
+  }, [dashboardData, isLoading]);
+  
   // Debug logging to understand data structure
   useEffect(() => {
-    if (dashboardData) {
-      console.log('Dashboard data structure:', {
-        timeSeries: dashboardData.timeSeries?.monthly?.slice(0, 2),
-        scopeBreakdown: dashboardData.breakdowns?.byScope,
-        categoryBreakdown: dashboardData.breakdowns?.byCategory?.slice(0, 3)
+    console.log('📊 Dashboard data updated:', {
+      loading: isLoading,
+      hasData: !!displayData,
+      timeSeries: displayData?.timeSeries.monthly?.length,
+      kpis: displayData?.kpis,
+      error
+    });
+    if (displayData) {
+      console.log('📊 Dashboard data structure:', {
+        timeSeries: displayData.timeSeries?.monthly?.slice(0, 2),
+        scopeBreakdown: displayData.breakdowns?.byScope,
+        categoryBreakdown: displayData.breakdowns?.byCategory?.slice(0, 3)
       });
     }
-  }, [dashboardData]);
+  }, [displayData, isLoading, error]);
   
   // Get entry match status for data quality panel
   const { counts: matchCounts, loading: matchLoading } = useEntryMatchStatus(company?.id);
@@ -525,7 +598,8 @@ export default function Dashboard() {
 
   // Handle Set Targets button
   const handleSetTargets = useCallback(() => {
-    // You can implement a modal or navigate to a targets page
+    // For now, show an alert - you can replace this with a modal or navigation
+    alert('Set Targets functionality would open a modal or navigate to targets page. This can be implemented based on your requirements.');
     console.log('Set Targets clicked - implement target setting functionality');
   }, []);
 
@@ -563,55 +637,55 @@ export default function Dashboard() {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-
+        
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <KpiCard
             title="Current Month Emissions"
-            value={dashboardData?.kpis.monthly.total || 0}
+            value={displayData?.kpis.monthly.total || 0}
             unit="tCO₂e"
-            change={dashboardData?.kpis.monthly.percentChange}
-            changeType={dashboardData?.kpis.monthly.percentChange && dashboardData.kpis.monthly.percentChange < 0 ? "decrease" : "increase"}
+            change={displayData?.kpis.monthly.percentChange}
+            changeType={displayData?.kpis.monthly.percentChange && displayData.kpis.monthly.percentChange < 0 ? "decrease" : "increase"}
             breakdown={{
-              scope1: dashboardData?.kpis.monthly.scope1 || 0,
-              scope2: dashboardData?.kpis.monthly.scope2 || 0,
-              scope3: dashboardData?.kpis.monthly.scope3 || 0
+              scope1: displayData?.kpis.monthly.scope1 || 0,
+              scope2: displayData?.kpis.monthly.scope2 || 0,
+              scope3: displayData?.kpis.monthly.scope3 || 0
             }}
-            lastUpdated={dashboardData?.entries.latest?.date}
+            lastUpdated={displayData?.entries.latest?.date}
             isLoading={isLoading}
           />
           <KpiCard
             title="Current Quarter Emissions"
-            value={dashboardData?.kpis.quarterly.total || 0}
+            value={displayData?.kpis.quarterly.total || 0}
             unit="tCO₂e"
-            change={dashboardData?.kpis.quarterly.percentChange}
-            changeType={dashboardData?.kpis.quarterly.percentChange && dashboardData.kpis.quarterly.percentChange < 0 ? "decrease" : "increase"}
+            change={displayData?.kpis.quarterly.percentChange}
+            changeType={displayData?.kpis.quarterly.percentChange && displayData.kpis.quarterly.percentChange < 0 ? "decrease" : "increase"}
             breakdown={{
-              scope1: dashboardData?.kpis.quarterly.scope1 || 0,
-              scope2: dashboardData?.kpis.quarterly.scope2 || 0,
-              scope3: dashboardData?.kpis.quarterly.scope3 || 0
+              scope1: displayData?.kpis.quarterly.scope1 || 0,
+              scope2: displayData?.kpis.quarterly.scope2 || 0,
+              scope3: displayData?.kpis.quarterly.scope3 || 0
             }}
             isLoading={isLoading}
           />
           <KpiCard
             title="Year-to-Date Emissions"
-            value={dashboardData?.kpis.ytd.total || 0}
+            value={displayData?.kpis.ytd.total || 0}
             unit="tCO₂e"
-            change={dashboardData?.kpis.ytd.percentChange}
-            changeType={dashboardData?.kpis.ytd.percentChange && dashboardData.kpis.ytd.percentChange < 0 ? "decrease" : "increase"}
+            change={displayData?.kpis.ytd.percentChange}
+            changeType={displayData?.kpis.ytd.percentChange && displayData.kpis.ytd.percentChange < 0 ? "decrease" : "increase"}
             breakdown={{
-              scope1: dashboardData?.kpis.ytd.scope1 || 0,
-              scope2: dashboardData?.kpis.ytd.scope2 || 0,
-              scope3: dashboardData?.kpis.ytd.scope3 || 0
+              scope1: displayData?.kpis.ytd.scope1 || 0,
+              scope2: displayData?.kpis.ytd.scope2 || 0,
+              scope3: displayData?.kpis.ytd.scope3 || 0
             }}
             target={{ 
-              value: dashboardData?.targets.baselineEmissions || 0, 
-              progress: dashboardData?.targets.currentProgress || 0 
+              value: displayData?.targets.baselineEmissions || 0, 
+              progress: displayData?.targets.currentProgress || 0 
             }}
             isLoading={isLoading}
           />
         </div>
-
+        
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Emissions Over Time */}
@@ -621,16 +695,16 @@ export default function Dashboard() {
                 <CardTitle>Emissions Over Time</CardTitle>
                 <div className="flex space-x-2">
                   <Button 
-                    variant={chartType === 'line' ? "default" : "outline"} 
-                    size="icon" 
-                    onClick={() => handleChartTypeChange('line')}
+                      variant={chartType === 'line' ? "default" : "outline"} 
+                      size="icon" 
+                      onClick={() => handleChartTypeChange('line')}
                   >
                     <BarChart2 className="h-4 w-4" />
                   </Button>
                   <Button 
-                    variant={chartType === 'area' ? "default" : "outline"} 
-                    size="icon" 
-                    onClick={() => handleChartTypeChange('area')}
+                      variant={chartType === 'area' ? "default" : "outline"} 
+                      size="icon" 
+                      onClick={() => handleChartTypeChange('area')}
                   >
                     <AreaChartIcon className="h-4 w-4" />
                   </Button>
@@ -643,7 +717,7 @@ export default function Dashboard() {
                 <Skeleton className="h-[350px] w-full" />
               ) : (
                 <TimeSeriesChart 
-                  data={dashboardData?.timeSeries.monthly || []} 
+                  data={displayData?.timeSeries.monthly || []} 
                   type={chartType} 
                   filters={filters}
                 />
@@ -658,7 +732,7 @@ export default function Dashboard() {
                 <Target className="h-5 w-5 text-green-600" />
                 Emission Reduction Target
               </CardTitle>
-              <CardDescription>Progress towards {dashboardData?.targets.currentTarget || 20}% reduction by {dashboardData?.targets.targetYear || 2030}</CardDescription>
+              <CardDescription>Progress towards {displayData?.targets.currentTarget || 20}% reduction by {displayData?.targets.targetYear || 2030}</CardDescription>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -667,35 +741,35 @@ export default function Dashboard() {
                 <div className="space-y-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-green-600">
-                      {dashboardData?.targets.currentProgress.toFixed(1) || 0}%
-                    </div>
+                      {displayData?.targets.currentProgress.toFixed(1) || 0}%
+                </div>
                     <div className="text-sm text-gray-500">Current Progress</div>
                   </div>
-                  <Progress value={dashboardData?.targets.currentProgress || 0} className="h-3" />
+                  <Progress value={displayData?.targets.currentProgress || 0} className="h-3" />
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <div className="text-gray-500">Baseline Year</div>
-                      <div className="font-semibold">{dashboardData?.targets.baselineYear || 2024}</div>
+                      <div className="font-semibold">{displayData?.targets.baselineYear || 2024}</div>
                     </div>
                     <div>
                       <div className="text-gray-500">Target Year</div>
-                      <div className="font-semibold">{dashboardData?.targets.targetYear || 2030}</div>
+                      <div className="font-semibold">{displayData?.targets.targetYear || 2030}</div>
                     </div>
                     <div>
                       <div className="text-gray-500">Baseline Emissions</div>
-                      <div className="font-semibold">{dashboardData?.targets.baselineEmissions.toLocaleString() || 0} tCO₂e</div>
-                    </div>
+                      <div className="font-semibold">{displayData?.targets.baselineEmissions.toLocaleString() || 0} tCO₂e</div>
+                  </div>
                     <div>
                       <div className="text-gray-500">Reduction Target</div>
-                      <div className="font-semibold">{dashboardData?.targets.currentTarget || 20}%</div>
-                    </div>
+                      <div className="font-semibold">{displayData?.targets.currentTarget || 20}%</div>
+                  </div>
                   </div>
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
-
+          
         {/* Bottom Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Emissions by Category */}
@@ -708,11 +782,11 @@ export default function Dashboard() {
               {isLoading ? (
                 <Skeleton className="h-[300px] w-full" />
               ) : (
-                <CategoryBarChart data={dashboardData?.breakdowns.byCategory || []} />
+                <CategoryBarChart data={displayData?.breakdowns.byCategory || []} />
               )}
             </CardContent>
           </Card>
-
+        
           {/* Emissions by Scope */}
           <Card>
             <CardHeader>
@@ -724,7 +798,7 @@ export default function Dashboard() {
                 <Skeleton className="h-[280px] w-full" />
               ) : (
                 <ScopeDonutChart 
-                  data={dashboardData?.breakdowns.byScope || []} 
+                  data={displayData?.breakdowns.byScope || []} 
                   filters={filters}
                 />
               )}

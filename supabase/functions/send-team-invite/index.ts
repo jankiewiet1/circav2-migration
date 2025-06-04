@@ -180,7 +180,7 @@ class TeamInviteService {
     inviterEmail: string;
   }): string {
     const { email, role, companyName, inviterName } = data;
-    const logoUrl = "https://circa.site/lovable-uploads/7416a2f2-be9a-4bce-9909-6e9663491308.png";
+    const logoUrl = "https://circa.site/circa-logo.png";
     const brandColor = "#10b981";
     const acceptUrl = `${Deno.env.get('FRONTEND_URL') || 'http://localhost:8080'}/accept-invite?email=${encodeURIComponent(email)}`;
 
